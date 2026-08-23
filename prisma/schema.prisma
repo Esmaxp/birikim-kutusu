@@ -1,0 +1,346 @@
+// Birikim Kutusu - Eğitim Yönetim Sistemi
+// SQLite kullanıldığı için enum yerine String + uygulama katmanında sabitler var.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Roller: TEACHER | STUDENT | PARENT
+/// Rehberlik (PDR) ayrı bir rol değildir; rehber öğretmen TEACHER rolüyle girer,
+/// uzmanlığı title alanında tutulur.
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String
+  title        String? // "Matematik Öğretmeni", "Rehber Öğretmen (PDR)" vb.
+  createdAt    DateTime @default(now())
+
+  sessions       Session[]
+  studentProfile Student?  @relation("StudentUser")
+  parentLinks    StudentParent[] @relation("ParentLinks")
+  authoredNotes  Note[]
+  addedBooks     Book[]
+  auditLogs      AuditLog[]
+
+  examSessionsAuthored    ExamSession[] @relation("ExamAuthor")
+  examSessionsAsCounselor ExamSession[] @relation("ExamCounselor")
+
+  @@index([role])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model SchoolClass {
+  id       String    @id @default(cuid())
+  name     String    @unique // 5A, 5B ...
+  order    Int       @default(0)
+  students Student[]
+}
+
+model Student {
+  id      String      @id @default(cuid())
+  name    String
+  no      Int
+  classId String
+  class   SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  userId String? @unique
+  user   User?   @relation("StudentUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  veliAdi  String?
+  telefon  String?
+  adres    String?
+  photoUrl String?
+
+  parents      StudentParent[]
+  books        Book[]
+  quotes       Quote[]
+  notes        Note[]
+  absences     Absence[]
+  exam         ExamAnalysis?
+  examSessions ExamSession[]
+
+  @@index([classId])
+}
+
+/// Öğrenci–veli bağı. Bir öğrencinin birden çok velisi (anne, baba, vasi),
+/// bir velinin birden çok çocuğu olabilir.
+model StudentParent {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parentId  String
+  parent    User    @relation("ParentLinks", fields: [parentId], references: [id], onDelete: Cascade)
+
+  yakinlik  String   @default("VELI") // ANNE | BABA | VELI
+  createdAt DateTime @default(now())
+
+  @@unique([studentId, parentId])
+  @@index([parentId])
+}
+
+/// Kitap Köşesi kaydı. Öğrenci kendi kitabını ekleyebilir, öğretmen de ekleyebilir.
+model Book {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  title    String
+  author   String?
+  status   String  @default("Okunuyor") // Okunuyor | Okundu | Planlandı
+  pages    Int?
+  rating   Int? // 1-5
+  review   String?
+  coverUrl String? // yüklenen kapak görseli
+  fileUrl  String? // yüklenen kitap dosyası (pdf/epub)
+  fileName String?
+
+  addedById String?
+  addedBy   User?   @relation(fields: [addedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quotes Quote[]
+
+  @@index([studentId])
+}
+
+/// Öğrencinin beğenip kaydettiği sözler.
+model Quote {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  text     String
+  source   String? // yazar / kişi
+  pageNo   Int?
+  favorite Boolean @default(false)
+
+  bookId String?
+  book   Book?   @relation(fields: [bookId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([studentId])
+}
+
+/// Öğretmen (rehber öğretmen dahil) tarafından yazılan not.
+/// visibleToStudent = true ise öğrenci panelinde görünür.
+model Note {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  authorId   String?
+  author     User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorRole String  @default("TEACHER") // TEACHER
+
+  title            String?
+  body             String
+  visibleToStudent Boolean @default(false)
+  readAt           DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([studentId])
+}
+
+model Absence {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  date      DateTime
+  reason    String   @default("Belirtilmedi")
+  createdAt DateTime @default(now())
+
+  @@index([studentId])
+}
+
+/// DEPRECATED: "SINAV ANALİZ VE REHBERLİK GÖRÜŞME FORMU" dijitalleştirmesiyle
+/// birlikte yerini çoklu-kayıt destekleyen ExamSession modeline bırakmıştır.
+/// Eski donut/trend ekranlarını kırmamak için burada tutulur; yeni veri
+/// ExamSession'a yazılır. Geçiş betiği: prisma/migrate-exam-sessions.ts
+/// Deneme analizi - öğrenci başına tek kayıt, alt tablolarla detay.
+/// Sadece öğretmen düzenleyebilir; öğrenci ve veli salt-okunur görür.
+model ExamAnalysis {
+  id        String  @id @default(cuid())
+  studentId String  @unique
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  dosyaAdi        String?
+  dosyaUrl        String?
+  konuToplamSoru  Int     @default(60)
+  tipToplamSoru   Int     @default(100)
+
+  subjects SubjectTime[]
+  wrongs   WrongItem[]
+  scores   ScorePoint[]
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+/// Sınav çözüm sırası ve süre bilgileri
+model SubjectTime {
+  id     String       @id @default(cuid())
+  examId String
+  exam   ExamAnalysis @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  ders   String
+  dakika Int    @default(0)
+  order  Int    @default(0)
+
+  @@index([examId])
+}
+
+/// kind: TOPIC (konu bazlı) | TYPE (soru tipi bazlı)
+model WrongItem {
+  id     String       @id @default(cuid())
+  examId String
+  exam   ExamAnalysis @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  kind  String
+  label String
+  count Int    @default(0)
+  order Int    @default(0)
+
+  @@index([examId, kind])
+}
+
+/// Sınav puan gelişimi noktaları
+model ScorePoint {
+  id     String       @id @default(cuid())
+  examId String
+  exam   ExamAnalysis @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  ay    String
+  puan  Int    @default(0)
+  order Int    @default(0)
+
+  @@index([examId])
+}
+
+/// "SINAV ANALİZ VE REHBERLİK GÖRÜŞME FORMU" — öğrenci başına birden çok kayıt
+/// (her deneme sınavı için bir ExamSession). ExamAnalysis'in yerini alır.
+model ExamSession {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  // Section 1 — SINAV BİLGİLERİ
+  sinavAdi      String
+  sinavTarihi   DateTime
+  sinavSaati    String? // serbest metin, örn "09:30"
+  gorusmeTarihi DateTime?
+  danismanId    String?
+  danisman      User?   @relation("ExamCounselor", fields: [danismanId], references: [id], onDelete: SetNull)
+
+  // Section 2 — SINAV YÖNETİMİ
+  toplamCozumSuresi Int? // dakika
+
+  // Section 3 — SINAV SÜRECİ DEĞERLENDİRMESİ
+  icselProblem      Boolean @default(false)
+  icselAciklama     String?
+  dissalProblem     Boolean @default(false)
+  dissalAciklama    String?
+  hataYapildi       Boolean @default(false)
+  hataTurleri       String  @default("[]") // JSON dizi (hata türü key'leri)
+  hataDigerAciklama String?
+
+  // Section 4 — özet sonuçlar
+  toplamNet     Float?
+  puan          Float?
+  yuzdelikDilim Float?
+  turkiyeSirasi Int?
+  kurumSirasi   Int?
+  sinifSirasi   Int?
+
+  // Section 5 — ANALİZ NOTLARI
+  genelDegerlendirme String?
+  kararlarOneriler   String?
+
+  // Section 6 — İMZALAR (dijital onay, çizilmiş imza değil)
+  ogrenciOnayAt DateTime?
+  rehberOnayAt  DateTime?
+
+  visibleToStudent Boolean @default(true)
+
+  subjects ExamSubjectResult[]
+  gains    MissedGain[]
+
+  createdById String?
+  createdBy   User?   @relation("ExamAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId, sinavTarihi])
+}
+
+/// Bir sınav + bir ders için satır: Section 2 (süre/sıra) ile Section 4 (netler)
+/// aynı ders listesiyle keyleneceğinden birleştirilmiştir.
+model ExamSubjectResult {
+  id     String      @id @default(cuid())
+  examId String
+  exam   ExamSession @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  ders        String // Türkçe | Matematik | Fen Bilimleri | Sosyal Bilgiler | İngilizce | Din Kültürü
+  cozumSuresi Int? // Section 2: dakika
+  cozumSirasi Int? // Section 2: 1 = ilk çözülen
+  dogru       Int   @default(0)
+  yanlis      Int   @default(0)
+  bos         Int   @default(0)
+  net         Float @default(0) // sunucuda hesaplanır, raporlama için saklanır
+  order       Int   @default(0)
+
+  @@index([examId])
+}
+
+/// Section 4 sağ sütun — "KAÇIRILAN (ÇALIŞILACAK) KAZANIMLAR", ders başına serbest metin madde.
+model MissedGain {
+  id     String      @id @default(cuid())
+  examId String
+  exam   ExamSession @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  ders  String
+  metin String
+  order Int    @default(0)
+
+  @@index([examId, ders])
+}
+
+/// Hassas işlem denetim kaydı (deneme, not, devamsızlık).
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String // EXAM_SAVE | NOTE_CREATE | NOTE_DELETE | ABSENCE_CREATE | ABSENCE_DELETE
+  entityType String // ExamAnalysis | Note | Absence
+  entityId   String?
+  studentId  String?
+  meta       String? // JSON
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([studentId])
+  @@index([action])
+  @@index([createdAt])
+}
