@@ -5,6 +5,8 @@ rol tabanlı giriş sistemine sahip web uygulaması.
 
 ## Kurulum
 
+Node.js 20.12 veya üzeri gereklidir.
+
 ```bash
 cp .env.example .env   # DATABASE_URL tanımı
 npm install
@@ -17,7 +19,9 @@ Sonradan veritabanını sıfırlamak için: `npm run db:reset`
 
 ## Demo hesaplar
 
-Tüm hesapların şifresi: **birikim123**
+Geliştirmede varsayılan şifre: **birikim123** (`SEED_PASSWORD` ile değiştirilebilir).
+Seed öğretmen hesabı yöneticidir; mevcut veritabanları için aşağıdaki `admin:create`
+adımını kullanın. Mevcut verileri korumak için `setup`/seed komutlarını tekrar çalıştırmayın.
 
 | Rol | E-posta | Giriş sayfası | Panel |
 | --- | --- | --- | --- |
@@ -42,39 +46,44 @@ olarak gönderilir ve hesabın rolüyle eşleşmezse giriş reddedilir.
 
 Giriş formunda demo e-posta/şifre ipucu gösterilmez.
 
-## Kayıt ekranı
+## Kayıt ve davet kodları
 
-`/kayit` rol seçimidir; her rolün kendi kayıt sayfası vardır
-(`/kayit/ogretmen`, `/kayit/ogrenci`, `/kayit/veli`). Ortak alanlar: ad soyad,
-e-posta, şifre + şifre tekrarı (en az 6 karakter). Kayıt başarılıysa oturum
-açılır ve rolün paneline yönlendirilir. Saatte IP başına 10 kayıt denemesi
-sınırı vardır.
+`/kayit` yalnızca öğrenci ve veli kayıt seçimi sunar. Öğretmenler giriş yapabilir;
+öğretmen kaydı sunucuda da kapalıdır. Öğrenci kayıt sırasında ad/şube/no girmez
+ve hiçbir kayıt akışı öğrenci oluşturmaz. Veli hesap adı başlangıçta e-postanın
+`@` öncesindeki bölümünden alınır.
 
-| Kayıt türü | Ek alanlar | Davranış |
+| Kayıt türü | Gerekli bilgiler | Sonuç |
 | --- | --- | --- |
-| Öğretmen | Branş / unvan (isteğe bağlı) | Doğrudan öğretmen hesabı açılır. |
-| Öğrenci | Şube, okul no | Şube + no + ad okul kaydıyla eşleşirse mevcut öğrenci kaydına bağlanır; o öğrencinin hesabı zaten varsa reddedilir. Eşleşme yoksa ve numara boşsa yeni öğrenci kaydı açılır. |
-| Veli | Yakınlık (Anne/Baba/Diğer) + bir veya daha fazla çocuk satırı (öğrenci adı, şube, okul no) | Her satır mevcut öğrenciyle eşleştirilir; eşleşmeyen satır kaydı durdurur. Veli yeni öğrenci kaydı oluşturamaz. |
+| Öğretmen | Yönetici tarafından oluşturulan hesap | İlk girişte geçici şifre değişir. |
+| Öğrenci | Öğrenci davet kodu, e-posta, şifre + tekrar | Kodun bağlı olduğu mevcut öğrenciye bağlanır. |
+| Veli | Bir veya daha fazla veli davet kodu, e-posta, şifre + tekrar | Kodlardaki öğrencilere, personelin belirlediği yakınlıkla bağlanır. |
 
-**Veli–öğrenci ilişkisi çoktan-çoğadır** (`StudentParent` tablosu):
+Şifreler en az 8 karakter, en fazla 72 UTF-8 bayt olmalıdır. Davet kodu 14 gün
+geçerlidir, yalnızca bir kez kullanılır ve veritabanında HMAC-SHA256 özeti tutulur.
+Kod kullanımı ve hesap bağlama aynı işlem içinde yapılır; bir kodla eşzamanlı
+iki istekten yalnızca biri başarılı olur. Başarısız kullanımda kodun bulunup
+bulunmadığı, kullanıldığı veya süresinin dolduğu açıklanmaz.
 
-- Bir öğrencinin birden çok velisi olabilir — anne ve baba ayrı hesaplarla girer.
-- Bir velinin birden çok çocuğu olabilir; veli panelinde çocuklar arasında
-  sekmelerle geçilir.
-- Aynı öğrenciye yalnızca **bir Anne** ve **bir Baba** bağlanabilir; "Diğer
-  (vasi/akraba)" birden fazla olabilir. Aynı veli aynı öğrenciye iki kez
-  bağlanamaz (`@@unique([studentId, parentId])`).
+Her öğretmen **Öğrenci yönetimi** menüsünden öğrenci ekleyebilir/düzenleyebilir.
+CSV başlığı `sube,no,ad` olmalıdır. En fazla 500 satır önce önizlenir; şube,
+numara tekrarları ve hatalar gösterilir. Hatalı satır varsa toplu kayıt yapılmaz.
+Öğrenci numarası şube içinde benzersizdir (`@@unique([classId, no])`).
 
-Öğrenci adı eşleştirmesi Türkçe büyük/küçük harfe ve Türkçe karaktere
-duyarsızdır ("zeynep celik" → "Zeynep Çelik"); okul no şube içinde tekil olduğu
-için asıl ayırt edici alan odur.
+**Davet kodları** menüsünden şube seçilir; öğrenci, Anne, Baba veya Diğer veli
+kodu oluşturulur. Yeni kod, aynı öğrenci/türdeki kullanılmamış eski kodları iptal
+eder. Kodlar yalnızca üretim sonucunda gösterilir; hemen kopyalayın veya A4
+kesilebilir fişleri yazdırın. Sonradan kodun kendisi görüntülenemez. Toplu işlem
+hesabı olmayan öğrenci/Anne/Baba için etkin kod yoksa üretir; Diğer veli kodları
+tek tek oluşturulur. Kullanılmamış kodlar iptal edilebilir; durum geçmişi görünür.
 
-> Üretimde: veli-öğrenci eşleşmesi şu an yalnızca şube + ad + okul no bilgisine
-> dayanıyor. Gerçek kullanımda okul tarafından üretilen tek kullanımlık davet
-> kodu veya yönetici onayı eklenmelidir.
+Bir öğrencinin yalnızca bir Anne ve bir Baba hesabı olabilir; Diğer veli birden
+fazla olabilir. Bir veli birden fazla çocuğa bağlanabilir; sonradan `/veli`
+üzerindeki kod alanıyla başka çocuk ekleyebilir. Yakınlık formdan kabul edilmez.
 
-Seed 5 şube (5A–6B) ve her şubede 8 öğrenci oluşturur; her öğrencinin kendi
-öğrenci ve veli hesabı vardır (ör. `burak.demir@ogrenci.birikim.k12.tr`).
+Seed 5 şubede 8'er demo öğrenci ve bunların hesaplarını oluşturur. Ek olarak,
+hesabı olmayan “Davet Test” öğrencisi ve öğrenci/veli davet kodları üretir;
+kodlar yalnızca geliştirmede terminale yazılır.
 
 ## Roller ve yetkiler
 
@@ -106,6 +115,27 @@ server action içinde `assertCanAccessStudent` ile kayıt sahipliği kontrolü.
 
 ## Öğretmen paneli
 
+### Yönetici ve öğretmen hesapları
+
+Şema değişiklikleri için `npx prisma db push` çalıştırın. İlk yöneticiyi oluşturun:
+
+```bash
+npm run admin:create -- --email yonetici@birikim.k12.tr --name "Okul Yöneticisi"
+```
+
+Şifre terminalde gizli olarak sorulur (en az 12 karakter, en fazla 72 UTF-8 bayt).
+Otomasyon için `ADMIN_PASSWORD` ortam değişkeni kullanılabilir. Şifreyi komut
+satırına yazmayın. Mevcut öğretmen adresi verilirse yöneticiye yükseltilir,
+şifresi değiştirilir ve eski oturumları kapatılır. Öğrenci/veli adresi kabul edilmez.
+
+Yöneticiler **Yönetim** menüsünden (`/ogretmen/yonetim/ogretmenler`) öğretmen
+oluşturabilir, şifre sıfırlayabilir, hesabı pasifleştirebilir veya tekrar
+etkinleştirebilir. Geçici şifre yalnızca işlem sonucunda gösterilir; güvenli
+biçimde iletilmelidir. İlk girişte `/hesap/sifre` sayfasında değiştirilmesi
+zorunludur. Tüm roller bu sayfadan kendi şifresini değiştirebilir; diğer
+cihazların oturumları sonlandırılır. Yönetici kendisini veya son etkin
+yöneticiyi pasifleştiremez/yetkisizleştiremez.
+
 - Kontrol paneli, şube bazlı öğrenci listeleri.
 - Öğrenci kartı: devamsızlık kaydı, not girişi (öğrenciye açık/gizli), kitap ekleme.
 - **Rehberlik** (`/ogretmen/rehberlik`) — eski PDR paneli buraya taşındı. Şube ve
@@ -136,6 +166,35 @@ src/components/          Ortak arayüz bileşenleri (AuthShell, AppShell vb.)
   adlarla yazılır; kullanıcı girdisi dosya yolu olarak kullanılmaz.
 
 ## Üretime alırken
+
+- `INVITE_CODE_SECRET` için en az 32 rastgele bayttan üretilmiş kalıcı bir gizli
+  değer belirleyin. Eksikse üretim sunucusu başlangıçta hata verir. Değişmesi
+  mevcut kullanılmamış davet kodlarını geçersiz kılar. Geliştirmede eksikse
+  uyarıyla sabit geliştirme anahtarı kullanılır.
+- `TRUST_PROXY=none` varsayılandır: tüm yönlendirme başlıkları yok sayılır,
+  IP tabanlı sınırlama kapalıdır; e-posta/hesap sınırları çalışır. Üretimde değişken
+  tanımlı değilse başlangıçta bir kez uyarılır.
+- nginx/Vercel tarzı tek güvenilir proxy için `TRUST_PROXY=hops:1`; iki proxy
+  için `hops:2` kullanın. XFF listesinin sağından belirtilen atlama seçilir;
+  eksik/geçersiz IP yok sayılır. Origin'e proxy dışından erişim kapatılmalıdır.
+- `TRUST_PROXY=cloudflare` yalnızca `cf-connecting-ip` kullanır. Origin yalnızca
+  Cloudflare ağlarından trafik kabul etmelidir. `x-real-ip` kullanılmaz.
+- Girişte hesap başına 10/15 dakika, bilinen IP başına 30/15 dakika sınırı vardır.
+  Bellek içi sayaçlar tek süreç içindir; çok sunuculu kurulumda ortak Redis gibi
+  bir depolama kullanın. Geliştirme sınırları daha yüksektir.
+- `setup` ve `db:seed`, `NODE_ENV=production` veya `DATABASE_URL` değeri `file:`
+  ile başlamıyorsa veritabanına dokunmadan durur. Bilinçli istisna için
+  `ALLOW_SEED=true` ve açıkça belirlenmiş `SEED_PASSWORD` gerekir.
+  `db:reset` üretim benzeri ortamda hiçbir istisnayla çalışmaz.
+- Mevcut veritabanına `npx prisma db push` uygulayın; eski şube/numara tekrarlarını
+  önce düzeltin. Ardından `npm run admin:create -- --email ... --name "..."` ile
+  yöneticiyi hazırlayın. Üretimde demo hesaplar oluşturmayın.
+- Eski yükleme adreslerini önce `npm run uploads:sanitize` ile inceleyin.
+  Yalnızca `npm run uploads:sanitize -- --apply` geçersiz alanları temizler.
+  Harici adresler, SVG, dizin geçişi ve yanlış dosya türleri reddedilir.
+- Dağıtım kontrolünde `npm run check:demo`, varsayılan demo şifresini kullanan
+  hesap varsa kod 1 döndürür. `npm test`, `npx tsc --noEmit`, `npm run lint` ve
+  `npm run build` kontrollerini çalıştırın.
 
 - `DATABASE_URL` değerini PostgreSQL/MySQL'e çevirip `provider` alanını
   güncelleyin, ardından `prisma migrate deploy` kullanın.

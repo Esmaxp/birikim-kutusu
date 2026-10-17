@@ -27,7 +27,7 @@ const UPLOAD_ROLES = new Set(["STUDENT", "TEACHER"]);
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
-  if (!user) {
+  if (!user || user.mustChangePassword) {
     return NextResponse.json({ error: "Yetkisiz istek." }, { status: 401 });
   }
 

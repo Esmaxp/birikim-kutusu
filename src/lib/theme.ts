@@ -1,0 +1,1 @@
+export const brand = { 50: "#fff1f1", 100: "#ffe0e1", 200: "#ffc7c9", 300: "#f5a0a4", 400: "#e66b72", 500: "#d4444c", 600: "#c1272d", 700: "#a31f25", 800: "#861e23", 900: "#6e1e23", DEFAULT: "#c1272d", dark: "#8f1418", light: "#e6a4a8", track: "#f1d9da" };

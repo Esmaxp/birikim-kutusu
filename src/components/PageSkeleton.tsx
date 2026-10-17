@@ -1,0 +1,2 @@
+import { Skeleton } from "./ui";
+export default function PageSkeleton() { return <div className="mx-auto max-w-6xl space-y-6 p-6" role="status" aria-label="Sayfa yükleniyor"><span className="sr-only">İçerik yükleniyor…</span><Skeleton className="h-8 w-56" /><Skeleton className="h-4 w-40" /><div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{[0,1,2,3].map((i) => <Skeleton key={i} className="h-28" />)}</div><div className="grid gap-5 md:grid-cols-2"><Skeleton className="h-64" /><Skeleton className="h-64" /></div></div>; }

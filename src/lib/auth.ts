@@ -17,6 +17,8 @@ const RENEW_IF_REMAINING_MS = 3 * 24 * 60 * 60 * 1000;
 const COOKIE_MAX_AGE_SEC = 30 * 24 * 60 * 60;
 
 export type SessionUser = {
+  isAdmin: boolean;
+  mustChangePassword: boolean;
   id: string;
   email: string;
   name: string;
@@ -99,11 +101,18 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     return null;
   }
 
+  if (session.user.disabledAt) {
+    await prisma.session.deleteMany({ where: { userId: session.userId } });
+    return null;
+  }
+
   // Sliding-window: aktif kullanımda DB süresini uzat (çerez maxAge ayrı).
   await maybeRenewSession(session.id, session.expiresAt);
 
   const { user } = session;
   return {
+    isAdmin: user.isAdmin,
+    mustChangePassword: user.mustChangePassword,
     id: user.id,
     email: user.email,
     name: user.name,
@@ -113,9 +122,10 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 }
 
 /** Giriş zorunlu; rol listesi verilirse rol de kontrol edilir. */
-export async function requireUser(roles?: Role[]): Promise<SessionUser> {
+export async function requireUser(roles?: Role[], allowPasswordChange = false): Promise<SessionUser> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (user.mustChangePassword && !allowPasswordChange) redirect("/hesap/sifre");
   if (roles && roles.length && !roles.includes(user.role as Role)) {
     redirect(ROLE_HOME[user.role] ?? "/login");
   }
@@ -178,4 +188,14 @@ export async function canAccessStudent(user: SessionUser, studentId: string) {
 export async function assertCanAccessStudent(user: SessionUser, studentId: string) {
   const ok = await canAccessStudent(user, studentId);
   if (!ok) throw new Error("Bu öğrencinin verilerine erişim yetkiniz yok.");
+}
+
+export async function requireAdmin() {
+  const user = await requireUser(["TEACHER"]);
+  if (!user.isAdmin) redirect("/ogretmen");
+  return user;
+}
+
+export async function currentSessionToken() {
+  return (await cookies()).get(COOKIE_NAME)?.value;
 }

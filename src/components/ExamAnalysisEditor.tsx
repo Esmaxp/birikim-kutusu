@@ -1,4 +1,8 @@
 "use client";
+import { ConfirmButton } from "./ui/feedback";
+import { toast } from "sonner";
+
+import { parseUploadUrl } from "@/lib/upload-url";
 
 import { useMemo, useRef, useState, useTransition } from "react";
 import {
@@ -24,7 +28,7 @@ import {
 
 import Avatar from "./Avatar";
 import { saveExamAnalysis } from "@/actions/exam";
-import { DERSLER, DONUT_COLORS, RED, RED_LIGHT, TRACK } from "@/lib/constants";
+import { DERSLER, DONUT_COLORS, RED, TRACK } from "@/lib/constants";
 import {
   examOrtalama,
   examTrend,
@@ -103,19 +107,19 @@ function Donut({
               <input
                 value={row.label}
                 onChange={(e) => onChange(row.id, "label", e.target.value)}
-                className="flex-1 min-w-0 text-[12px] text-slate-600 bg-transparent border-b border-transparent hover:border-slate-200 focus:outline-none truncate"
+                className="flex-1 min-w-0 text-[13px] text-slate-600 bg-transparent border-b border-transparent hover:border-slate-200 focus:outline-none truncate"
               />
               <input
                 type="number"
                 min={0}
                 value={row.count}
                 onChange={(e) => onChange(row.id, "count", Number(e.target.value))}
-                className="w-10 text-[12px] text-right text-slate-700 font-medium bg-transparent border-b border-transparent hover:border-slate-200 focus:outline-none"
+                className="w-10 text-[13px] text-right text-slate-700 font-medium bg-transparent border-b border-transparent hover:border-slate-200 focus:outline-none"
               />
               <button
                 type="button"
                 onClick={() => onRemove(row.id)}
-                className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500"
+                className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-500"
               >
                 <X size={12} />
               </button>
@@ -124,21 +128,21 @@ function Donut({
           <button
             type="button"
             onClick={onAdd}
-            className="flex items-center gap-1 text-[11px] mt-1"
-            style={{ color: RED }}
+            className="flex items-center gap-1 text-[13px] mt-1 text-birikim"
+
           >
             <Plus size={11} /> Yanlış ekle
           </button>
         </div>
       </div>
       <div className="flex items-center gap-2 mt-2 pl-1">
-        <span className="text-[11px] text-slate-400">Toplam soru sayısı</span>
+        <span className="text-[13px] text-slate-600">Toplam soru sayısı</span>
         <input
           type="number"
           min={1}
           value={totalSoru}
           onChange={(e) => onTotalChange(Number(e.target.value))}
-          className="w-12 text-[11px] text-slate-600 border-b border-slate-200 focus:outline-none bg-transparent"
+          className="w-12 text-[13px] text-slate-600 border-b border-slate-200 focus:outline-none bg-transparent"
         />
       </div>
     </div>
@@ -218,6 +222,7 @@ export default function ExamAnalysisEditor({
       if (!res.ok) throw new Error(json.error ?? "Yükleme başarısız.");
       update((d) => ({ ...d, dosyaAdi: json.name, dosyaUrl: json.url }));
     } catch (e) {
+        toast.error(e instanceof Error ? e.message : "İşlem tamamlanamadı.");
       setHata(e instanceof Error ? e.message : "Yükleme başarısız.");
     } finally {
       setYukleniyor(false);
@@ -230,8 +235,10 @@ export default function ExamAnalysisEditor({
       try {
         await saveExamAnalysis(student.id, data);
         setMesaj("Kaydedildi ✓");
+        toast.success("Kaydedildi.");
         setTimeout(() => setMesaj(""), 2500);
       } catch (e) {
+        toast.error(e instanceof Error ? e.message : "İşlem tamamlanamadı.");
         setHata(e instanceof Error ? e.message : "Kaydedilemedi.");
       }
     });
@@ -244,22 +251,22 @@ export default function ExamAnalysisEditor({
           <Avatar name={student.name} size={36} />
           <div>
             <div className="text-[13px] font-semibold">{student.name}</div>
-            <div className="text-[11px] text-slate-400">
+            <div className="text-[13px] text-slate-600">
               {student.sube} · No: {student.no}
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {hata && <span className="text-[12px] text-red-600">{hata}</span>}
+          {hata && <span className="text-[13px] text-red-600">{hata}</span>}
           {mesaj && (
-            <span className="text-[12px] text-green-600 font-medium">{mesaj}</span>
+            <span className="text-[13px] text-green-600 font-medium">{mesaj}</span>
           )}
           <button
             type="button"
             onClick={handleSave}
             disabled={pending}
-            className="flex items-center gap-1.5 text-white text-[13px] font-medium px-4 py-2 rounded-lg hover:opacity-90 disabled:opacity-60"
-            style={{ background: RED }}
+            className="flex items-center gap-1.5 text-white text-[13px] font-medium px-4 py-2 rounded-lg hover:opacity-90 disabled:opacity-60 bg-birikim"
+
           >
             <Save size={14} /> {pending ? "Kaydediliyor..." : "Kaydet"}
           </button>
@@ -284,16 +291,16 @@ export default function ExamAnalysisEditor({
             }}
             className={
               "border-2 border-dashed rounded-lg py-8 flex flex-col items-center justify-center text-center " +
-              (surukleniyor ? "bg-red-50" : "bg-slate-50")
+              (surukleniyor ? "bg-birikim-50 border-birikim" : "bg-slate-50 border-birikim-200")
             }
-            style={{ borderColor: surukleniyor ? RED : "#e2b6b8" }}
+
           >
-            <Upload size={26} style={{ color: RED }} className="mb-2" />
-            <div className="text-[13px] text-slate-500">
+            <Upload size={26}  className="mb-2 text-birikim" />
+            <div className="text-[13px] text-slate-600">
               Sınav Sonuç PDF&apos;ini buraya sürükleyin
             </div>
-            <div className="text-[11px] text-slate-400 mb-3">veya</div>
-            <input
+            <div className="text-[13px] text-slate-600 mb-3">veya</div>
+            <input aria-label="Dosya seç"
               ref={fileInputRef}
               type="file"
               accept="application/pdf,image/*"
@@ -304,28 +311,28 @@ export default function ExamAnalysisEditor({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={yukleniyor}
-              className="text-white text-[12px] font-medium px-4 py-2 rounded-lg disabled:opacity-60"
-              style={{ background: RED }}
+              className="text-white text-[13px] font-medium px-4 py-2 rounded-lg disabled:opacity-60 bg-birikim"
+
             >
               {yukleniyor ? "Yükleniyor..." : "Dosya Seç"}
             </button>
           </div>
-          {data.dosyaAdi && (
+          {data.dosyaAdi && parseUploadUrl(data.dosyaUrl, "any") && (
             <div className="flex items-center justify-between mt-3 bg-slate-50 rounded-lg px-3 py-2">
               <a
-                href={data.dosyaUrl ?? "#"}
+                href={parseUploadUrl(data.dosyaUrl, "any") ?? undefined}
                 target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-2 text-[12px] text-slate-600 truncate hover:underline"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-[13px] text-slate-600 truncate hover:underline"
               >
-                <FileText size={14} style={{ color: RED }} /> {data.dosyaAdi}
+                <FileText size={14}  className="text-birikim" /> {data.dosyaAdi}
               </a>
               <button
                 type="button"
                 onClick={() =>
                   update((d) => ({ ...d, dosyaAdi: null, dosyaUrl: null }))
                 }
-                className="text-slate-300 hover:text-red-500"
+                className="text-slate-600 hover:text-red-500"
               >
                 <Trash2 size={14} />
               </button>
@@ -340,14 +347,14 @@ export default function ExamAnalysisEditor({
           <div className="space-y-2">
             {data.dersler.map((row, i) => (
               <div key={row.id} className="flex items-center gap-2 group">
-                <span className="text-[12px] text-slate-400 w-4">{i + 1}.</span>
-                <span className="text-[12px] text-slate-500 w-10 shrink-0">
+                <span className="text-[13px] text-slate-600 w-4">{i + 1}.</span>
+                <span className="text-[13px] text-slate-600 w-10 shrink-0">
                   Ders:
                 </span>
                 <select
                   value={row.ders}
                   onChange={(e) => changeDers(row.id, "ders", e.target.value)}
-                  className="flex-1 text-[12px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none bg-white"
+                  className="flex-1 text-[13px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none bg-white"
                 >
                   {DERSLER.map((d) => (
                     <option key={d}>{d}</option>
@@ -361,24 +368,24 @@ export default function ExamAnalysisEditor({
                   onChange={(e) =>
                     changeDers(row.id, "dakika", Number(e.target.value))
                   }
-                  className="w-16 text-[12px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none text-right"
+                  className="w-16 text-[13px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none text-right"
                 />
-                <span className="text-[11px] text-slate-400 w-9">Dakika</span>
-                <button
+                <span className="text-[13px] text-slate-600 w-9">Dakika</span>
+                <ConfirmButton
                   type="button"
-                  onClick={() => removeDers(row.id)}
-                  className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 shrink-0"
-                >
+                  onConfirm={() => removeDers(row.id)}
+                  className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-500 shrink-0"
+                 aria-label="Satırı sil">
                   <X size={13} />
-                </button>
+                </ConfirmButton>
               </div>
             ))}
           </div>
           <button
             type="button"
             onClick={addDers}
-            className="flex items-center gap-1 text-[12px] mt-3"
-            style={{ color: RED }}
+            className="flex items-center gap-1 text-[13px] mt-3 text-birikim"
+
           >
             <Plus size={13} /> Ders ekle
           </button>
@@ -415,7 +422,7 @@ export default function ExamAnalysisEditor({
             <div className="text-[13px] font-semibold text-slate-700">
               Sınav Puan Gelişimi Grafiği
             </div>
-            <div className="text-[11px] text-slate-400">
+            <div className="text-[13px] text-slate-600">
               Ortalama{" "}
               <span className="font-semibold text-slate-600">{ortalama}</span>
               {"  ·  "}
@@ -434,12 +441,12 @@ export default function ExamAnalysisEditor({
                 <CartesianGrid stroke="#f1f1f1" vertical={false} />
                 <XAxis
                   dataKey="ay"
-                  tick={{ fontSize: 11, fill: "#94a3b8" }}
+                  tick={{ fontSize: 12, fill: "#475569" }}
                   axisLine={{ stroke: "#e5e7eb" }}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "#94a3b8" }}
+                  tick={{ fontSize: 12, fill: "#475569" }}
                   axisLine={false}
                   tickLine={false}
                   width={28}
@@ -473,7 +480,7 @@ export default function ExamAnalysisEditor({
                 <input
                   value={p.ay}
                   onChange={(e) => changePuan(p.id, "ay", e.target.value)}
-                  className="w-14 text-[11px] bg-transparent focus:outline-none text-slate-600"
+                  className="w-14 text-[13px] bg-transparent focus:outline-none text-slate-600"
                 />
                 <input
                   type="number"
@@ -481,22 +488,22 @@ export default function ExamAnalysisEditor({
                   onChange={(e) =>
                     changePuan(p.id, "puan", Number(e.target.value))
                   }
-                  className="w-10 text-[11px] bg-transparent focus:outline-none text-slate-700 font-medium text-right"
+                  className="w-10 text-[13px] bg-transparent focus:outline-none text-slate-700 font-medium text-right"
                 />
-                <button
+                <ConfirmButton
                   type="button"
-                  onClick={() => removePuan(p.id)}
-                  className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500"
-                >
+                  onConfirm={() => removePuan(p.id)}
+                  className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-500"
+                 aria-label="Satırı sil">
                   <X size={11} />
-                </button>
+                </ConfirmButton>
               </div>
             ))}
             <button
               type="button"
               onClick={addPuan}
-              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border border-dashed"
-              style={{ color: RED, borderColor: RED_LIGHT }}
+              className="flex items-center gap-1 text-[13px] px-2 py-1 rounded-full border border-dashed text-birikim border-birikim-light"
+
             >
               <Plus size={11} /> Sınav ekle
             </button>

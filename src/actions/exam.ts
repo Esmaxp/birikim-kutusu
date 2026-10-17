@@ -1,5 +1,6 @@
 "use server";
 
+import { requireUploadUrl, sanitizeFileName } from "@/lib/upload-url";
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
@@ -18,6 +19,8 @@ export async function saveExamAnalysis(studentId: string, data: ExamData) {
   const student = await prisma.student.findUnique({ where: { id: studentId } });
   if (!student) throw new Error("Öğrenci bulunamadı.");
 
+  const dosyaUrl = requireUploadUrl(data.dosyaUrl, "any");
+  const dosyaAdi = sanitizeFileName(data.dosyaAdi);
   const konuToplam = Math.max(1, Number(data.konuToplamSoru) || 1);
   const tipToplam = Math.max(1, Number(data.tipToplamSoru) || 1);
 
@@ -35,14 +38,14 @@ export async function saveExamAnalysis(studentId: string, data: ExamData) {
       where: { studentId },
       create: {
         studentId,
-        dosyaAdi: data.dosyaAdi,
-        dosyaUrl: data.dosyaUrl,
+        dosyaAdi,
+        dosyaUrl,
         konuToplamSoru: konuToplam,
         tipToplamSoru: tipToplam,
       },
       update: {
-        dosyaAdi: data.dosyaAdi,
-        dosyaUrl: data.dosyaUrl,
+        dosyaAdi,
+        dosyaUrl,
         konuToplamSoru: konuToplam,
         tipToplamSoru: tipToplam,
       },
@@ -103,7 +106,7 @@ export async function saveExamAnalysis(studentId: string, data: ExamData) {
     entityId: examId,
     studentId,
     meta: {
-      dosyaAdi: data.dosyaAdi,
+      dosyaAdi,
       puanSayisi: data.puanlar.length,
     },
   });

@@ -1,4 +1,11 @@
 "use client";
+import { FeedbackForm } from "@/components/ui/feedback";
+
+import { toast } from "sonner";
+import { ConfirmForm } from "@/components/ui/feedback";
+
+
+import { parseUploadUrl } from "@/lib/upload-url";
 
 import { useRef, useState, useTransition } from "react";
 import {
@@ -22,7 +29,7 @@ import {
   toggleQuoteFavorite,
   updateBookStatus,
 } from "@/actions/books";
-import { KITAP_DURUMLARI, RED, RED_DARK, formatDate } from "@/lib/constants";
+import { KITAP_DURUMLARI, formatDate } from "@/lib/constants";
 
 export type CornerBook = {
   id: string;
@@ -53,7 +60,7 @@ export type CornerQuote = {
 const DURUM_RENK: Record<string, string> = {
   Okundu: "bg-green-50 text-green-700 border-green-200",
   Okunuyor: "bg-amber-50 text-amber-700 border-amber-200",
-  Planlandı: "bg-slate-50 text-slate-500 border-slate-200",
+  Planlandı: "bg-slate-50 text-slate-600 border-slate-200",
 };
 
 /** Dosya yükleme kutusu — /api/upload'a POST atar, dönen URL'yi form alanına yazar. */
@@ -90,6 +97,7 @@ function UploadField({
       if (!res.ok) throw new Error(json.error ?? "Yükleme başarısız.");
       onUploaded(json.url, json.name);
     } catch (e) {
+        toast.error(e instanceof Error ? e.message : "İşlem tamamlanamadı.");
       setError(e instanceof Error ? e.message : "Yükleme başarısız.");
     } finally {
       setBusy(false);
@@ -99,7 +107,7 @@ function UploadField({
 
   return (
     <div>
-      <input
+      <input aria-label="Dosya seç"
         ref={inputRef}
         type="file"
         accept={accept}
@@ -108,13 +116,13 @@ function UploadField({
       />
       {value ? (
         <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
-          <span className="flex items-center gap-2 text-[12px] text-slate-600 truncate">
+          <span className="flex items-center gap-2 text-[13px] text-slate-600 truncate">
             {icon} {fileName ?? "Yüklendi"}
           </span>
           <button
             type="button"
             onClick={onClear}
-            className="text-slate-300 hover:text-red-500 shrink-0"
+            className="text-slate-600 hover:text-red-500 shrink-0"
           >
             <X size={13} />
           </button>
@@ -124,12 +132,12 @@ function UploadField({
           type="button"
           disabled={busy}
           onClick={() => inputRef.current?.click()}
-          className="w-full flex items-center justify-center gap-2 text-[12px] text-slate-500 border-2 border-dashed border-slate-200 rounded-lg py-2.5 hover:bg-slate-50 disabled:opacity-60"
+          className="w-full flex items-center justify-center gap-2 text-[13px] text-slate-600 border-2 border-dashed border-slate-200 rounded-lg py-2.5 hover:bg-slate-50 disabled:opacity-60"
         >
           {icon} {busy ? "Yükleniyor..." : label}
         </button>
       )}
-      {error && <div className="text-[11px] text-red-600 mt-1">{error}</div>}
+      {error && <div className="text-[13px] text-red-600 mt-1">{error}</div>}
     </div>
   );
 }
@@ -164,11 +172,13 @@ export default function BookCorner({
     startTransition(async () => {
       try {
         await addBook(fd);
+                  toast.success("Kitap eklendi.");
         setKitapFormAcik(false);
         setCoverUrl(null);
         setFileUrl(null);
         setFileName(null);
       } catch (e) {
+        toast.error(e instanceof Error ? e.message : "İşlem tamamlanamadı.");
         setHata(e instanceof Error ? e.message : "Kitap eklenemedi.");
       }
     });
@@ -179,8 +189,10 @@ export default function BookCorner({
     startTransition(async () => {
       try {
         await addQuote(fd);
+                  toast.success("Söz eklendi.");
         setSozFormAcik(false);
       } catch (e) {
+        toast.error(e instanceof Error ? e.message : "İşlem tamamlanamadı.");
         setHata(e instanceof Error ? e.message : "Söz kaydedilemedi.");
       }
     });
@@ -203,14 +215,14 @@ export default function BookCorner({
             <div className="text-[22px] font-bold text-slate-800 leading-none">
               {k.value}
             </div>
-            <div className="text-[11px] text-slate-400 mt-1">{k.label}</div>
+            <div className="text-[13px] text-slate-600 mt-1">{k.label}</div>
           </div>
         ))}
       </div>
 
       {/* Sekmeler */}
-      <div className="flex items-center justify-between border-b border-slate-200">
-        <div className="flex gap-6 text-[13px]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200">
+        <div className="flex gap-4 text-[13px]">
           {[
             { key: "kitap" as const, label: "Kitaplarım", icon: BookOpen },
             { key: "soz" as const, label: "Beğendiğim Sözler", icon: QuoteIcon },
@@ -223,9 +235,9 @@ export default function BookCorner({
                 onClick={() => setTab(key)}
                 className={
                   "flex items-center gap-1.5 py-3 border-b-2 " +
-                  (active ? "font-semibold" : "border-transparent text-slate-400")
+                  (active ? "font-semibold border-birikim text-birikim" : "border-transparent text-slate-600")
                 }
-                style={active ? { borderColor: RED, color: RED } : undefined}
+                aria-pressed={active}
               >
                 <Icon size={14} /> {label}
               </button>
@@ -241,11 +253,8 @@ export default function BookCorner({
                 ? setKitapFormAcik((v) => !v)
                 : setSozFormAcik((v) => !v)
             }
-            className="flex items-center gap-1.5 text-white text-[12px] font-medium px-3 py-1.5 rounded-lg mb-2"
-            style={{
-              background:
-                (tab === "kitap" ? kitapFormAcik : sozFormAcik) ? RED_DARK : RED,
-            }}
+            className="flex items-center gap-1.5 text-white text-[13px] font-medium px-3 py-1.5 rounded-lg mb-2 bg-birikim hover:bg-birikim-700"
+            aria-expanded={tab === "kitap" ? kitapFormAcik : sozFormAcik}
           >
             <Plus size={13} /> {tab === "kitap" ? "Kitap Yükle" : "Söz Ekle"}
           </button>
@@ -253,7 +262,7 @@ export default function BookCorner({
       </div>
 
       {hata && (
-        <div className="text-[12px] text-red-600 bg-red-50 rounded-lg px-3 py-2">
+        <div className="text-[13px] text-red-600 bg-red-50 rounded-lg px-3 py-2">
           {hata}
         </div>
       )}
@@ -275,18 +284,18 @@ export default function BookCorner({
               <input type="hidden" name="fileName" value={fileName ?? ""} />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
+                <input aria-label="Kitap adı *"
                   required
                   name="title"
                   placeholder="Kitap adı *"
                   className="text-[13px] border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-slate-300"
                 />
-                <input
+                <input aria-label="Yazar"
                   name="author"
                   placeholder="Yazar"
                   className="text-[13px] border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-slate-300"
                 />
-                <select
+                <select aria-label="Okuma durumu"
                   name="status"
                   className="text-[13px] border border-slate-200 rounded-lg px-3 py-2 focus:outline-none bg-white"
                 >
@@ -294,14 +303,14 @@ export default function BookCorner({
                     <option key={d}>{d}</option>
                   ))}
                 </select>
-                <input
+                <input aria-label="Sayfa sayısı"
                   name="pages"
                   type="number"
                   min={0}
                   placeholder="Sayfa sayısı"
                   className="text-[13px] border border-slate-200 rounded-lg px-3 py-2 focus:outline-none"
                 />
-                <select
+                <select aria-label="Puan"
                   name="rating"
                   defaultValue=""
                   className="text-[13px] border border-slate-200 rounded-lg px-3 py-2 focus:outline-none bg-white"
@@ -315,7 +324,7 @@ export default function BookCorner({
                 </select>
               </div>
 
-              <textarea
+              <textarea aria-label="Kitap hakkındaki düşüncelerim..."
                 name="review"
                 rows={2}
                 placeholder="Kitap hakkındaki düşüncelerim..."
@@ -326,7 +335,7 @@ export default function BookCorner({
                 <UploadField
                   label="Kapak görseli yükle"
                   accept="image/*"
-                  icon={<ImagePlus size={14} style={{ color: RED }} />}
+                  icon={<ImagePlus size={14}  className="text-birikim" />}
                   value={coverUrl}
                   fileName={coverUrl ? "Kapak yüklendi" : null}
                   onUploaded={(url) => setCoverUrl(url)}
@@ -335,7 +344,7 @@ export default function BookCorner({
                 <UploadField
                   label="Kitap dosyası yükle (PDF/EPUB)"
                   accept="application/pdf,application/epub+zip"
-                  icon={<Upload size={14} style={{ color: RED }} />}
+                  icon={<Upload size={14}  className="text-birikim" />}
                   value={fileUrl}
                   fileName={fileName}
                   onUploaded={(url, name) => {
@@ -353,15 +362,15 @@ export default function BookCorner({
                 <button
                   type="submit"
                   disabled={pending}
-                  className="text-white text-[13px] font-medium px-4 py-2 rounded-lg disabled:opacity-60"
-                  style={{ background: RED }}
+                  className="text-white text-[13px] font-medium px-4 py-2 rounded-lg disabled:opacity-60 bg-birikim"
+
                 >
                   {pending ? "Kaydediliyor..." : "Kitabı Kaydet"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setKitapFormAcik(false)}
-                  className="text-[13px] text-slate-500 px-4 py-2 rounded-lg border border-slate-200"
+                  className="text-[13px] text-slate-600 px-4 py-2 rounded-lg border border-slate-200"
                 >
                   Vazgeç
                 </button>
@@ -371,47 +380,47 @@ export default function BookCorner({
 
           {books.length === 0 ? (
             <div className="bg-white rounded-xl border border-slate-200 p-10 text-center">
-              <BookOpen size={30} className="mx-auto mb-3 text-slate-300" />
+              <BookOpen size={30} className="mx-auto mb-3 text-slate-600" />
               <div className="text-[14px] font-semibold text-slate-600">
                 Rafın henüz boş
               </div>
-              <p className="text-[12px] text-slate-400 mt-1">
+              <p className="text-[13px] text-slate-600 mt-1">
                 {readOnly
                   ? "Henüz kitap eklenmemiş."
                   : "İlk kitabını eklemek için “Kitap Yükle”ye dokun."}
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {books.map((b) => (
                 <div
                   key={b.id}
                   className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col"
                 >
-                  <div className="flex gap-3 p-3">
-                    {b.coverUrl ? (
+                  <div className="flex flex-col gap-3 p-4">
+                    {parseUploadUrl(b.coverUrl, "image") ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={b.coverUrl}
+                        src={parseUploadUrl(b.coverUrl, "image") ?? undefined}
                         alt={b.title}
-                        className="w-16 h-24 object-cover rounded-md shrink-0 bg-slate-100"
+                        className="h-52 w-full object-contain rounded-lg bg-slate-50 p-2"
                       />
                     ) : (
-                      <div className="w-16 h-24 rounded-md shrink-0 flex items-center justify-center bg-slate-50 border border-slate-100">
-                        <BookOpen size={20} className="text-slate-300" />
+                      <div className="h-52 w-full rounded-lg flex flex-col gap-3 items-center justify-center bg-gradient-to-br from-birikim-50 to-birikim-100 border border-birikim-200 p-6 text-center">
+                        <BookOpen size={32} className="text-birikim" /><span className="font-semibold text-birikim-900">{b.title}</span>
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
                       <div className="text-[13px] font-semibold text-slate-700 leading-tight">
                         {b.title}
                       </div>
-                      <div className="text-[11px] text-slate-400 mb-1.5">
+                      <div className="text-[13px] text-slate-600 mb-1.5">
                         {b.author ?? "Yazar belirtilmemiş"}
                       </div>
                       <div className="flex items-center gap-1 flex-wrap">
                         <span
                           className={
-                            "inline-block text-[10px] px-2 py-0.5 rounded-full border " +
+                            "inline-block text-[13px] px-2 py-0.5 rounded-full border " +
                             (DURUM_RENK[b.status] ?? DURUM_RENK.Planlandı)
                           }
                         >
@@ -419,19 +428,19 @@ export default function BookCorner({
                         </span>
                         {b.addedByTeacher && (
                           <span
-                            className="inline-block text-[9px] text-white px-1.5 py-0.5 rounded-full"
-                            style={{ background: RED }}
+                            className="inline-block text-[13px] text-white px-1.5 py-0.5 rounded-full bg-birikim"
+
                           >
                             Öğretmen ekledi
                           </span>
                         )}
                       </div>
                       {b.rating ? (
-                        <div className="flex items-center gap-0.5 mt-1.5">
+                        <div className="flex items-center gap-0.5 mt-1.5" role="img" aria-label={`${b.rating} / 5 yıldız`}>
                           {Array.from({ length: 5 }).map((_, i) => (
                             <Star
                               key={i}
-                              size={11}
+                              size={16}
                               className={
                                 i < (b.rating ?? 0)
                                   ? "fill-amber-400 text-amber-400"
@@ -445,26 +454,26 @@ export default function BookCorner({
                   </div>
 
                   {b.review && (
-                    <p className="text-[11px] text-slate-500 px-3 pb-2 line-clamp-3">
+                    <p className="text-[13px] text-slate-600 px-3 pb-2 line-clamp-3">
                       {b.review}
                     </p>
                   )}
 
-                  <div className="mt-auto border-t border-slate-100 px-3 py-2 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 text-[11px] text-slate-400 min-w-0">
+                  <div className="mt-auto border-t border-slate-100 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-[13px] text-slate-600 min-w-0">
                       {b.pages ? <span>{b.pages} sf.</span> : null}
                       {b.quoteCount > 0 && (
                         <span className="flex items-center gap-0.5">
                           <QuoteIcon size={10} /> {b.quoteCount}
                         </span>
                       )}
-                      {b.fileUrl && (
+                      {parseUploadUrl(b.fileUrl, "document") && (
                         <a
-                          href={b.fileUrl}
+                          href={parseUploadUrl(b.fileUrl, "document") ?? undefined}
                           target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-0.5 hover:underline"
-                          style={{ color: RED }}
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-0.5 hover:underline text-birikim"
+
                         >
                           <FileText size={10} /> Dosya
                         </a>
@@ -473,26 +482,26 @@ export default function BookCorner({
 
                     {!readOnly && (
                       <div className="flex items-center gap-1 shrink-0">
-                        <form action={updateBookStatus.bind(null, b.id)}>
-                          <select
+                        <FeedbackForm action={updateBookStatus.bind(null, b.id)}>
+                          <select aria-label="Okuma durumu"
                             name="status"
                             defaultValue={b.status}
                             onChange={(e) => e.currentTarget.form?.requestSubmit()}
-                            className="text-[10px] border border-slate-200 rounded px-1 py-0.5 bg-white"
+                            className="text-[13px] border border-slate-200 rounded px-1 py-0.5 bg-white"
                           >
                             {KITAP_DURUMLARI.map((d) => (
                               <option key={d}>{d}</option>
                             ))}
                           </select>
-                        </form>
-                        <form action={deleteBook.bind(null, b.id)}>
+                        </FeedbackForm>
+                        <ConfirmForm action={deleteBook.bind(null, b.id)}>
                           <button
-                            className="text-slate-300 hover:text-red-500"
+                            className="text-slate-600 hover:text-red-500"
                             title="Kitabı sil"
                           >
                             <Trash2 size={13} />
                           </button>
-                        </form>
+                        </ConfirmForm>
                       </div>
                     )}
                   </div>
@@ -516,7 +525,7 @@ export default function BookCorner({
               </div>
               <input type="hidden" name="studentId" value={studentId} />
 
-              <textarea
+              <textarea aria-label="Sözü buraya yaz..."
                 required
                 name="text"
                 rows={3}
@@ -525,12 +534,12 @@ export default function BookCorner({
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input
+                <input aria-label="Kim söyledi / kaynak"
                   name="source"
                   placeholder="Kim söyledi / kaynak"
                   className="text-[13px] border border-slate-200 rounded-lg px-3 py-2 focus:outline-none"
                 />
-                <select
+                <select aria-label="Kitap"
                   name="bookId"
                   defaultValue=""
                   className="text-[13px] border border-slate-200 rounded-lg px-3 py-2 focus:outline-none bg-white"
@@ -542,7 +551,7 @@ export default function BookCorner({
                     </option>
                   ))}
                 </select>
-                <input
+                <input aria-label="Sayfa no"
                   name="pageNo"
                   type="number"
                   min={0}
@@ -551,8 +560,8 @@ export default function BookCorner({
                 />
               </div>
 
-              <label className="flex items-center gap-2 text-[12px] text-slate-500">
-                <input type="checkbox" name="favorite" className="accent-[#c1272d]" />
+              <label className="flex items-center gap-2 text-[13px] text-slate-600">
+                <input type="checkbox" name="favorite" className="accent-birikim" />
                 Favorilerime ekle
               </label>
 
@@ -560,15 +569,15 @@ export default function BookCorner({
                 <button
                   type="submit"
                   disabled={pending}
-                  className="text-white text-[13px] font-medium px-4 py-2 rounded-lg disabled:opacity-60"
-                  style={{ background: RED }}
+                  className="text-white text-[13px] font-medium px-4 py-2 rounded-lg disabled:opacity-60 bg-birikim"
+
                 >
                   {pending ? "Kaydediliyor..." : "Sözü Kaydet"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setSozFormAcik(false)}
-                  className="text-[13px] text-slate-500 px-4 py-2 rounded-lg border border-slate-200"
+                  className="text-[13px] text-slate-600 px-4 py-2 rounded-lg border border-slate-200"
                 >
                   Vazgeç
                 </button>
@@ -578,11 +587,11 @@ export default function BookCorner({
 
           {quotes.length === 0 ? (
             <div className="bg-white rounded-xl border border-slate-200 p-10 text-center">
-              <QuoteIcon size={30} className="mx-auto mb-3 text-slate-300" />
+              <QuoteIcon size={30} className="mx-auto mb-3 text-slate-600" />
               <div className="text-[14px] font-semibold text-slate-600">
                 Henüz kayıtlı söz yok
               </div>
-              <p className="text-[12px] text-slate-400 mt-1">
+              <p className="text-[13px] text-slate-600 mt-1">
                 {readOnly
                   ? "Henüz söz kaydedilmemiş."
                   : "Okurken beğendiğin cümleleri buraya kaydedebilirsin."}
@@ -593,23 +602,18 @@ export default function BookCorner({
               {quotes.map((q) => (
                 <div
                   key={q.id}
-                  className="bg-white rounded-xl border border-slate-200 p-4 relative"
-                  style={
-                    q.favorite
-                      ? { borderColor: RED, boxShadow: `0 0 0 1px ${RED}22` }
-                      : undefined
-                  }
+                  className={"bg-white rounded-xl border p-5 relative " + (q.favorite ? "border-birikim ring-1 ring-birikim-100" : "border-slate-200")}
                 >
                   <QuoteIcon
-                    size={18}
-                    className="mb-2 opacity-40"
-                    style={{ color: RED }}
+                    size={28}
+                    className="mb-3 text-birikim-300"
+
                   />
                   <p className="text-[13px] text-slate-700 leading-relaxed italic">
                     “{q.text}”
                   </p>
                   <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
-                    <div className="text-[11px] text-slate-400 min-w-0 truncate">
+                    <div className="text-[13px] text-slate-600 min-w-0 truncate">
                       {q.source ?? q.bookTitle ?? "Kaynak belirtilmemiş"}
                       {q.pageNo ? ` · s.${q.pageNo}` : ""}
                       {" · "}
@@ -617,13 +621,13 @@ export default function BookCorner({
                     </div>
                     {!readOnly && (
                       <div className="flex items-center gap-1 shrink-0">
-                        <form action={toggleQuoteFavorite.bind(null, q.id)}>
+                        <FeedbackForm action={toggleQuoteFavorite.bind(null, q.id)}>
                           <button
                             title={q.favorite ? "Favoriden çıkar" : "Favorilere ekle"}
                             className={
                               q.favorite
                                 ? "text-red-500"
-                                : "text-slate-300 hover:text-red-400"
+                                : "text-slate-600 hover:text-red-400"
                             }
                           >
                             <Heart
@@ -631,12 +635,12 @@ export default function BookCorner({
                               className={q.favorite ? "fill-red-500" : ""}
                             />
                           </button>
-                        </form>
-                        <form action={deleteQuote.bind(null, q.id)}>
-                          <button className="text-slate-300 hover:text-red-500">
+                        </FeedbackForm>
+                        <ConfirmForm action={deleteQuote.bind(null, q.id)}>
+                          <button aria-label="Kaydı sil" className="text-slate-600 hover:text-red-500">
                             <Trash2 size={13} />
                           </button>
-                        </form>
+                        </ConfirmForm>
                       </div>
                     )}
                   </div>

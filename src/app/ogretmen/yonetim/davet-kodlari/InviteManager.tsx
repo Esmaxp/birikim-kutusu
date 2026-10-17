@@ -1,0 +1,18 @@
+"use client";
+import { ActionGuard } from "@/components/ui/ActionGuard";
+import { toast } from "sonner";
+import { useActionState, useEffect, useState } from "react";
+import { manageInvites, type InviteState } from "@/actions/invites";
+type Student = { id: string; name: string; no: number; hasAccount: boolean; parents: string[]; invites: { id: string; role: string; status: string }[] };
+export default function InviteManager({ classId, students }: { classId: string; students: Student[] }) {
+  const [state, action, pending] = useActionState<InviteState, FormData>(manageInvites, {});
+  const [origin, setOrigin] = useState("");
+  useEffect(() => { setOrigin(window.location.origin); }, []);
+  useEffect(() => { if (state.error) toast.error(state.error); if (state.message) toast.success(state.message); }, [state]);
+  return <ActionGuard operations={["revoke", "create"]}><div className="space-y-4"><div className="print:hidden">
+    <form action={action}><input type="hidden" name="classId" value={classId} /><button disabled={pending} name="operation" value="bulk" className="bg-birikim text-white p-2 rounded">Şubenin eksik kodlarını oluştur</button></form><p className="text-sm text-slate-600 my-2">Toplu işlem: hesabı olmayan öğrenci, anne ve baba için kullanılabilir kod yoksa üretir. Diğer veli kodlarını tek tek oluşturun.</p>
+    {state.error && <p role="alert" className="text-red-600">{state.error}</p>}{state.message && <p role="status">{state.message}</p>}
+  </div>{!!state.slips?.length && <><button type="button" onClick={() => window.print()} className="print:hidden underline">Kod fişlerini yazdır</button><div className="print-sheet grid grid-cols-2 gap-3">{state.slips.map((s) => <div key={s.id} className="border border-dashed border-slate-400 p-4 break-inside-avoid text-sm"><h2 className="font-bold">BİRİKİM OKULLARI · Birikim Kutusu</h2><p>{s.name} · {s.role}</p><input readOnly aria-label={`${s.name} davet kodu`} value={s.code} className="font-mono text-xl w-full bg-transparent my-2" /><button type="button" className="print:hidden underline" onClick={() => navigator.clipboard.writeText(s.code)}>Kopyala</button><p className="break-all">{origin}/kayit/{s.slug}</p><p>Son kullanım: {new Date(s.expiresAt).toLocaleDateString("tr-TR")}</p></div>)}</div></>}
+    <div className="overflow-x-auto print:hidden"><table className="bg-white w-full text-sm"><thead><tr><th className="p-3 text-left">Öğrenci / hesaplar</th><th className="text-left">Kod oluştur / yenile</th><th className="text-left">Kod durumu</th></tr></thead><tbody>{students.map((s) => <tr key={s.id} className="border-t"><td className="p-3">{s.no} · {s.name}<p className="text-slate-600">Öğrenci: {s.hasAccount ? "Kayıtlı" : "Hesap yok"} · Veli: {s.parents.join(", ") || "Yok"}</p></td><td><div className="flex flex-wrap gap-2">{[{ key: "STUDENT", label: "Öğrenci" }, { key: "ANNE", label: "Anne" }, { key: "BABA", label: "Baba" }, { key: "VELI", label: "Diğer veli" }].map((r) => <form action={action} key={r.key}><input type="hidden" name="studentId" value={s.id} /><input type="hidden" name="relation" value={r.key} /><button disabled={pending || (r.key === "STUDENT" ? s.hasAccount : r.key !== "VELI" && s.parents.includes(r.key))} name="operation" value="create" className="underline text-birikim disabled:opacity-40">{r.label}</button></form>)}</div></td><td className="p-3">{s.invites.map((i) => <div key={i.id} className="flex gap-2"><span>{i.role}: {i.status}</span>{i.status === "Kullanılmadı" && <form action={action}><input type="hidden" name="id" value={i.id} /><button disabled={pending} name="operation" value="revoke" className="underline">İptal et</button></form>}</div>)}</td></tr>)}</tbody></table></div>
+  </div></ActionGuard>;
+}

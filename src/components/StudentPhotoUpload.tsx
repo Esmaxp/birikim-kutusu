@@ -5,7 +5,7 @@ import { Camera } from "lucide-react";
 
 import Avatar from "./Avatar";
 import { updateStudentPhoto } from "@/actions/students";
-import { RED } from "@/lib/constants";
+
 
 /** Öğretmen-only fotoğraf yükleme kontrolü: /api/upload'a yükler, sonucu Student.photoUrl'e yazar. */
 export default function StudentPhotoUpload({
@@ -44,7 +44,7 @@ export default function StudentPhotoUpload({
 
   return (
     <div className="relative shrink-0 w-fit">
-      <input
+      <input aria-label="Dosya seç"
         ref={inputRef}
         type="file"
         accept="image/*"
@@ -57,13 +57,13 @@ export default function StudentPhotoUpload({
         onClick={() => inputRef.current?.click()}
         disabled={busy}
         title="Fotoğraf değiştir"
-        className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full text-white flex items-center justify-center border-2 border-white disabled:opacity-60"
-        style={{ background: RED }}
+        className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full text-white flex items-center justify-center border-2 border-white disabled:opacity-60 bg-birikim"
+
       >
         <Camera size={12} />
       </button>
       {error && (
-        <div className="absolute top-full left-0 mt-1 text-[10px] text-red-600 w-40 leading-tight">
+        <div className="absolute top-full left-0 mt-1 text-[13px] text-red-600 w-40 leading-tight">
           {error}
         </div>
       )}

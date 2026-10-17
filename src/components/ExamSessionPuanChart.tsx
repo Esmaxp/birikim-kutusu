@@ -29,20 +29,21 @@ export default function ExamSessionPuanChart({
             <CartesianGrid stroke="#f1f1f1" vertical={false} />
             <XAxis
               dataKey="ad"
-              tick={{ fontSize: 11, fill: "#94a3b8" }}
+              tick={{ fontSize: 12, fill: "#475569" }}
               axisLine={{ stroke: "#e5e7eb" }}
               tickLine={false}
             />
             <YAxis
-              tick={{ fontSize: 11, fill: "#94a3b8" }}
+              tick={{ fontSize: 12, fill: "#475569" }}
               axisLine={false}
               tickLine={false}
               width={32}
             />
-            <Tooltip
+            <Tooltip formatter={(v: number) => [v.toLocaleString("tr-TR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }), "Puan"]}
               contentStyle={{ fontSize: 12, borderRadius: 8, borderColor: "#e5e7eb" }}
             />
             <Line
+              isAnimationActive={false}
               type="monotone"
               dataKey="puan"
               name="Puan"

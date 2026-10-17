@@ -1,7 +1,8 @@
-export const RED = "#c1272d";
-export const RED_DARK = "#8f1418";
-export const RED_LIGHT = "#e6a4a8";
-export const TRACK = "#f1d9da";
+import { brand } from "./theme";
+export const RED = brand.DEFAULT;
+export const RED_DARK = brand.dark;
+export const RED_LIGHT = brand.light;
+export const TRACK = brand.track;
 
 export const DERSLER = [
   "Matematik",
@@ -76,14 +77,7 @@ export const ROLE_HOME: Record<string, string> = {
   PARENT: "/veli",
 };
 
-export const DONUT_COLORS = [
-  RED,
-  "#d9585d",
-  "#e58c8f",
-  "#efb7b9",
-  "#f6dadb",
-  "#8a1b20",
-];
+export const DONUT_COLORS = [brand[600], brand[500], brand[400], brand[300], brand[200], brand[800]];
 
 export const AVATAR_COLORS = [
   "bg-red-400",

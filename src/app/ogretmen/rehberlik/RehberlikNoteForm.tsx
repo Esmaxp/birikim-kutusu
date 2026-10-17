@@ -1,9 +1,10 @@
 "use client";
+import { toast } from "sonner";
 
 import { useRef, useState, useTransition } from "react";
 
 import { addNote } from "@/actions/notes";
-import { RED } from "@/lib/constants";
+
 
 export default function RehberlikNoteForm({
   studentId,
@@ -23,10 +24,12 @@ export default function RehberlikNoteForm({
     startTransition(async () => {
       try {
         await addNote(fd);
+        toast.success("Not gönderildi.");
         formRef.current?.reset();
         setMesaj("Not gönderildi ✓");
         setTimeout(() => setMesaj(""), 2500);
       } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Not kaydedilemedi.");
         setHata(e instanceof Error ? e.message : "Not kaydedilemedi.");
       }
     });
@@ -43,12 +46,12 @@ export default function RehberlikNoteForm({
       </div>
       <input type="hidden" name="studentId" value={studentId} />
 
-      <input
+      <input aria-label="Başlık (örn. Sınav kaygısı görüşmesi)"
         name="title"
         placeholder="Başlık (örn. Sınav kaygısı görüşmesi)"
         className="w-full text-[13px] border border-slate-200 rounded-lg px-3 py-2 focus:outline-none"
       />
-      <textarea
+      <textarea aria-label="Öğrenciye iletmek istediğin notu yaz..."
         required
         name="body"
         rows={5}
@@ -56,13 +59,13 @@ export default function RehberlikNoteForm({
         className="w-full text-[13px] border border-slate-200 rounded-lg px-3 py-2 focus:outline-none resize-none"
       />
 
-      <label className="flex items-center gap-2 text-[12px] text-slate-500">
+      <label className="flex items-center gap-2 text-[13px] text-slate-600">
         <input
           type="checkbox"
           name="visibleToStudent"
           value="on"
           defaultChecked
-          className="accent-[#c1272d]"
+          className="accent-birikim"
         />
         Öğrenci panelinde görünsün
       </label>
@@ -71,13 +74,13 @@ export default function RehberlikNoteForm({
         <button
           type="submit"
           disabled={pending}
-          className="text-white text-[13px] font-medium px-4 py-2 rounded-lg disabled:opacity-60"
-          style={{ background: RED }}
+          className="text-white text-[13px] font-medium px-4 py-2 rounded-lg disabled:opacity-60 bg-birikim"
+
         >
           {pending ? "Gönderiliyor..." : "Notu Gönder"}
         </button>
-        {mesaj && <span className="text-[12px] text-green-600">{mesaj}</span>}
-        {hata && <span className="text-[12px] text-red-600">{hata}</span>}
+        {mesaj && <span className="text-[13px] text-green-600">{mesaj}</span>}
+        {hata && <span className="text-[13px] text-red-600">{hata}</span>}
       </div>
     </form>
   );

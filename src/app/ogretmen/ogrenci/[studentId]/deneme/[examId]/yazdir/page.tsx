@@ -1,3 +1,5 @@
+
+import { parseUploadUrl } from "@/lib/upload-url";
 import { notFound } from "next/navigation";
 
 import { assertCanAccessStudent, requireUser } from "@/lib/auth";
@@ -98,10 +100,10 @@ export default async function ExamSessionPrintPage({ params, searchParams }: Pro
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {exam.student.photoUrl ? (
+            {parseUploadUrl(exam.student.photoUrl, "image") ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={exam.student.photoUrl}
+                src={parseUploadUrl(exam.student.photoUrl, "image") ?? undefined}
                 alt={exam.student.name}
                 style={{ width: "16mm", height: "16mm" }}
                 className="rounded-full object-cover border border-slate-200"

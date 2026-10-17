@@ -1,0 +1,9 @@
+"use client";
+import { useId } from "react";
+import { cn } from "@/lib/utils";
+type Field = { label: string; error?: string; hint?: string };
+const control = "block w-full min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-[15px] text-slate-800 placeholder:text-slate-600 disabled:bg-slate-100";
+function FieldShell({ id, label, error, hint, children }: Field & { id: string; children: React.ReactNode }) { return <div className="space-y-1.5"><label htmlFor={id} className="block text-sm font-semibold text-slate-700">{label}</label>{children}{error ? <p id={`${id}-help`} role="alert" className="text-[13px] text-red-700">{error}</p> : hint ? <p id={`${id}-help`} className="text-[13px] text-slate-600">{hint}</p> : null}</div>; }
+export function Input({ label, error, hint, id, className, ...props }: Field & React.InputHTMLAttributes<HTMLInputElement>) { const generated = useId(); id ||= generated; return <FieldShell {...{ id, label, error, hint }}><input {...props} id={id} aria-invalid={!!error} aria-describedby={error || hint ? `${id}-help` : undefined} className={cn(control, error && "border-red-600", className)} /></FieldShell>; }
+export function Select({ label, error, hint, id, className, ...props }: Field & React.SelectHTMLAttributes<HTMLSelectElement>) { const generated = useId(); id ||= generated; return <FieldShell {...{ id, label, error, hint }}><select {...props} id={id} aria-invalid={!!error} aria-describedby={error || hint ? `${id}-help` : undefined} className={cn(control, className)} /></FieldShell>; }
+export function Textarea({ label, error, hint, id, className, ...props }: Field & React.TextareaHTMLAttributes<HTMLTextAreaElement>) { const generated = useId(); id ||= generated; return <FieldShell {...{ id, label, error, hint }}><textarea {...props} id={id} aria-invalid={!!error} aria-describedby={error || hint ? `${id}-help` : undefined} className={cn(control, "min-h-28", className)} /></FieldShell>; }

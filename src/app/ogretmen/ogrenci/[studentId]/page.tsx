@@ -1,10 +1,11 @@
-import Link from "next/link";
+import { Tabs } from "@/components/ui";
+
 import { notFound } from "next/navigation";
 import { BookOpen, CalendarX, HeartHandshake, LayoutDashboard, Phone, Users } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
 import { assertCanAccessStudent, requireUser } from "@/lib/auth";
-import { RED } from "@/lib/constants";
+
 import StudentPhotoUpload from "@/components/StudentPhotoUpload";
 import BookCorner from "@/components/BookCorner";
 import DevamTab from "@/components/DevamTab";
@@ -34,7 +35,7 @@ export default async function OgrenciDetayPage({ params, searchParams }: Props) 
 
   const student = await prisma.student.findUnique({
     where: { id: studentId },
-    include: { class: true },
+    include: { class: true, _count: { select: { absences: true, examSessions: true, notes: true, books: true } } },
   });
   if (!student) notFound();
 
@@ -94,38 +95,21 @@ export default async function OgrenciDetayPage({ params, searchParams }: Props) 
         />
         <div className="flex-1 min-w-[200px]">
           <div className="text-[17px] font-bold text-slate-800">{student.name}</div>
-          <div className="text-[12px] text-slate-400 flex items-center gap-1 mt-0.5">
+          <div className="text-[13px] text-slate-600 flex items-center gap-1 mt-0.5">
             <Users size={12} /> {student.class.name} · No: {student.no}
           </div>
         </div>
-        <div className="text-[12px] text-slate-500 space-y-1">
+        <div className="text-[13px] text-slate-600 space-y-1">
           <div>
-            <span className="text-slate-400">Veli:</span> {student.veliAdi ?? "-"}
+            <span className="text-slate-600">Veli:</span> {student.veliAdi ?? "-"}
           </div>
           <div className="flex items-center gap-1">
-            <Phone size={11} className="text-slate-400" /> {student.telefon ?? "-"}
+            <Phone size={11} className="text-slate-600" /> {student.telefon ?? "-"}
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 px-4 flex gap-6 text-[13px] overflow-x-auto">
-        {TABS.map(({ key, label, icon: Icon }) => {
-          const active = tab === key;
-          return (
-            <Link
-              key={key}
-              href={`${base}?tab=${key}`}
-              className={
-                "flex items-center gap-1.5 py-3 border-b-2 shrink-0 " +
-                (active ? "font-semibold" : "border-transparent text-slate-400")
-              }
-              style={active ? { borderColor: RED, color: RED } : undefined}
-            >
-              <Icon size={14} /> {label}
-            </Link>
-          );
-        })}
-      </div>
+      <Tabs items={TABS.map(({ key, label }) => ({ label, href: `${base}?tab=${key}`, active: tab === key, count: ({ devam: student._count.absences, deneme: student._count.examSessions, rehberlik: student._count.notes, kitap: student._count.books })[key] }))} />
 
       {tab === "devam" && (
         <DevamTab

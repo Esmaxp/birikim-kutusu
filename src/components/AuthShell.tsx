@@ -1,42 +1,5 @@
-import { BookOpen } from "lucide-react";
-
-import { RED } from "@/lib/constants";
-
-/** Giriş ve kayıt sayfalarının ortak çerçevesi: logo, beyaz kart ve alt bilgi. */
-export default function AuthShell({
-  children,
-  footer,
-  width = "sm",
-}: {
-  children: React.ReactNode;
-  footer?: React.ReactNode;
-  width?: "sm" | "md";
-}) {
-  return (
-    <div className="min-h-screen bg-[#eef1f5] flex items-center justify-center p-6">
-      <div className={"w-full " + (width === "md" ? "max-w-md" : "max-w-sm")}>
-        <div className="flex flex-col items-center mb-6">
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-white mb-3"
-            style={{ background: RED }}
-          >
-            <BookOpen size={26} />
-          </div>
-          <div className="text-[13px] font-bold tracking-wide">BİRİKİM</div>
-          <div className="text-[9px] text-slate-400 tracking-widest -mt-0.5">
-            OKULLARI
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-          {children}
-          {footer && <div className="mt-4">{footer}</div>}
-        </div>
-
-        <p className="text-center text-[11px] text-slate-400 mt-5">
-          © {new Date().getFullYear()} Birikim Okulları - Tüm Hakları Saklıdır.
-        </p>
-      </div>
-    </div>
-  );
+import { BookOpen, Sprout, Sparkles, Heart } from "lucide-react";
+import { cn } from "@/lib/utils";
+export default function AuthShell({ children, footer, width = "sm" }: { children: React.ReactNode; footer?: React.ReactNode; width?: "sm" | "md" }) {
+  return <div className="min-h-screen lg:grid lg:grid-cols-2"><aside className="relative hidden overflow-hidden bg-birikim-900 p-12 text-white lg:flex lg:flex-col lg:justify-between"><div className="flex items-center gap-3"><BookOpen size={30} /><span className="text-xl font-bold">BİRİKİM OKULLARI</span></div><div className="relative z-10 max-w-lg"><span className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm"><Sprout size={18} />Her gün yeni bir birikim</span><h2 className="text-5xl font-bold leading-tight tracking-tight">Küçük adımlar.<br />Büyük gelecekler.</h2><p className="mt-6 max-w-sm text-lg leading-relaxed text-white/90">Öğrenci, öğretmen ve aileyi aynı yolculukta buluşturan gelişim alanı.</p><div className="mt-12 flex gap-4"><div className="rounded-2xl border border-white/20 bg-white/10 p-5"><BookOpen size={32} /><p className="mt-3 text-sm">Oku, keşfet</p></div><div className="mt-8 rounded-2xl border border-white/20 bg-white/10 p-5"><Sparkles size={32} /><p className="mt-3 text-sm">Kendini geliştir</p></div><div className="rounded-2xl border border-white/20 bg-white/10 p-5"><Heart size={32} /><p className="mt-3 text-sm">Birlikte büyü</p></div></div></div><p className="text-sm text-white/80">Her öğrencinin hikâyesi değerlidir.</p><div aria-hidden className="absolute -right-40 -top-40 h-[500px] w-[500px] rounded-full border-[80px] border-white/5" /></aside><main className="flex min-h-screen flex-col items-center justify-center px-5 py-10 sm:px-10"><div className={cn("w-full", width === "md" ? "max-w-lg" : "max-w-md")}><div className="mb-8 flex items-center gap-3"><span className="rounded-xl bg-birikim p-3 text-white"><BookOpen size={25} /></span><div><p className="text-lg font-bold">Birikim Kutusu</p><p className="text-[13px] text-slate-600">Gelişimin bir arada.</p></div></div><div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card sm:p-8">{children}{footer && <div className="mt-6 border-t border-slate-100 pt-5">{footer}</div>}</div><p className="mt-6 text-center text-[13px] text-slate-600">© {new Date().getFullYear()} Birikim Okulları</p></div></main></div>;
 }

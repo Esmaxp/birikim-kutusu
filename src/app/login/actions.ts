@@ -12,20 +12,17 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { ROLE_HOME, ROLE_LABELS } from "@/lib/constants";
+import { getClientIp } from "@/lib/client-ip";
 import {
   LOGIN_LIMIT,
+  LOGIN_IP_LIMIT,
   LOGIN_WINDOW_MS,
   rateLimiter,
 } from "@/lib/rate-limit";
 
 export type LoginState = { error?: string };
 
-async function clientIp(): Promise<string> {
-  const h = await headers();
-  const fwd = h.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0]?.trim() || "unknown";
-  return h.get("x-real-ip") || h.get("cf-connecting-ip") || "unknown";
-}
+const DUMMY_HASH = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
 
 export async function loginAction(
   _prev: LoginState,
@@ -37,24 +34,26 @@ export async function loginAction(
   const password = String(formData.get("password") ?? "");
   const role = String(formData.get("role") ?? "");
 
-  if (!email || !password) {
+  if (!email || !password || email.length > 254 || Buffer.byteLength(password) > 72) {
     return { error: "E-posta ve şifre zorunludur." };
   }
 
-  const ip = await clientIp();
+  const ip = getClientIp(await headers());
   const rl = await rateLimiter.check(
-    `login:${ip}:${email}`,
+    `login:acct:${email}`,
     LOGIN_LIMIT,
     LOGIN_WINDOW_MS
   );
-  if (!rl.allowed) {
+  const ipLimit = ip ? await rateLimiter.check(`login:ip:${ip}`, LOGIN_IP_LIMIT, LOGIN_WINDOW_MS) : null;
+  if (!rl.allowed || (ipLimit && !ipLimit.allowed)) {
     return {
-      error: `Çok fazla deneme. Lütfen ${rl.retryAfterSec} saniye sonra tekrar deneyin.`,
+      error: `Çok fazla deneme. Lütfen ${Math.max(rl.retryAfterSec, ipLimit?.retryAfterSec ?? 0)} saniye sonra tekrar deneyin.`,
     };
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+  const validPassword = await verifyPassword(password, user?.passwordHash ?? DUMMY_HASH);
+  if (!user || user.disabledAt || !validPassword) {
     return { error: "E-posta veya şifre hatalı." };
   }
 
@@ -65,7 +64,7 @@ export async function loginAction(
   }
 
   await createSession(user.id);
-  redirect(ROLE_HOME[user.role] ?? "/");
+  redirect(user.mustChangePassword ? "/hesap/sifre" : ROLE_HOME[user.role] ?? "/");
 }
 
 export async function logoutAction() {

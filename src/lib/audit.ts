@@ -1,6 +1,18 @@
 import { prisma } from "./prisma";
 
 export type AuditAction =
+  | "INVITE_CREATE"
+  | "INVITE_REVOKE"
+  | "INVITE_REDEEM"
+  | "STUDENT_CREATE"
+  | "STUDENT_UPDATE"
+  | "STUDENT_IMPORT"
+  | "TEACHER_CREATE"
+  | "TEACHER_DISABLE"
+  | "TEACHER_ENABLE"
+  | "TEACHER_UPDATE"
+  | "PASSWORD_RESET_BY_ADMIN"
+  | "PASSWORD_CHANGE"
   | "EXAM_SAVE"
   | "NOTE_CREATE"
   | "NOTE_DELETE"
@@ -13,6 +25,7 @@ export type AuditAction =
   | "EXAM_SESSION_CONFIRM";
 
 export type AuditEntityType =
+  | "InviteCode"
   | "ExamAnalysis"
   | "Note"
   | "Absence"

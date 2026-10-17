@@ -1,110 +1,23 @@
 import Link from "next/link";
-import { BookOpen, CalendarX, LayoutDashboard, StickyNote, Users } from "lucide-react";
-
+import { Users, School, CalendarX, StickyNote, ArrowUpRight, AlertCircle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
-import { RED, formatDate } from "@/lib/constants";
-
+import { formatDate } from "@/lib/constants";
+import { PageHeader, StatCard, Card, Badge, EmptyState, buttonVariants } from "@/components/ui";
 export default async function OgretmenDashboard() {
-  await requireUser(["TEACHER"]);
-
-  const [classes, ogrenciSayisi, kitapSayisi, sozSayisi, denemeSayisi, sonDevamsizliklar] =
-    await Promise.all([
-      prisma.schoolClass.findMany({
-        orderBy: { order: "asc" },
-        include: { _count: { select: { students: true } } },
-      }),
-      prisma.student.count(),
-      prisma.book.count(),
-      prisma.quote.count(),
-      prisma.examAnalysis.count(),
-      prisma.absence.findMany({
-        take: 6,
-        orderBy: { date: "desc" },
-        include: { student: { include: { class: true } } },
-      }),
-    ]);
-
-  const kartlar = [
-    { label: "Öğrenci", value: ogrenciSayisi, icon: Users },
-    { label: "Okunan/Okunacak Kitap", value: kitapSayisi, icon: BookOpen },
-    { label: "Kaydedilen Söz", value: sozSayisi, icon: StickyNote },
-    { label: "Deneme Analizi", value: denemeSayisi, icon: LayoutDashboard },
-  ];
-
-  return (
-    <div className="max-w-6xl mx-auto p-6 space-y-5">
-      <div className="text-[15px] font-semibold text-slate-700">Kontrol Paneli</div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {kartlar.map(({ label, value, icon: Icon }) => (
-          <div
-            key={label}
-            className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3"
-          >
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-white shrink-0"
-              style={{ background: RED }}
-            >
-              <Icon size={18} />
-            </div>
-            <div className="min-w-0">
-              <div className="text-[20px] font-bold text-slate-800 leading-none">
-                {value}
-              </div>
-              <div className="text-[11px] text-slate-400 truncate">{label}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <div className="text-[13px] font-semibold text-slate-700 mb-3">Şubeler</div>
-          <div className="space-y-2">
-            {classes.map((c) => (
-              <Link
-                key={c.id}
-                href={`/ogretmen/sube/${encodeURIComponent(c.name)}`}
-                className="flex items-center justify-between bg-slate-50 hover:bg-slate-100 rounded-lg px-3 py-2"
-              >
-                <span className="text-[13px] font-medium text-slate-700 flex items-center gap-2">
-                  <Users size={14} style={{ color: RED }} /> {c.name}
-                </span>
-                <span className="text-[12px] text-slate-400">
-                  {c._count.students} öğrenci
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <div className="text-[13px] font-semibold text-slate-700 mb-3 flex items-center gap-1.5">
-            <CalendarX size={14} style={{ color: RED }} /> Son Devamsızlıklar
-          </div>
-          {sonDevamsizliklar.length === 0 ? (
-            <div className="text-[12px] text-slate-400">Kayıt yok.</div>
-          ) : (
-            <div className="space-y-1.5">
-              {sonDevamsizliklar.map((a) => (
-                <div
-                  key={a.id}
-                  className="flex items-center justify-between text-[12px] bg-slate-50 rounded-lg px-3 py-2"
-                >
-                  <span className="text-slate-600">
-                    {a.student.name}{" "}
-                    <span className="text-slate-400">({a.student.class.name})</span>
-                  </span>
-                  <span className="text-slate-400">
-                    {formatDate(a.date)} · {a.reason}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  const user = await requireUser(["TEACHER"]);
+  const now = new Date(); const week = new Date(now); week.setDate(now.getDate() - ((now.getDay() + 6) % 7)); week.setHours(0,0,0,0);
+  const recent = new Date(now.getTime() - 14 * 86400000); const split = new Date(now.getTime() - 7 * 86400000);
+  const [classes, count, absenceCount, noteCount, students] = await Promise.all([
+    prisma.schoolClass.findMany({ orderBy: { order: "asc" }, include: { _count: { select: { students: true } } } }),
+    prisma.student.count(), prisma.absence.count({ where: { date: { gte: week, lte: now } } }), prisma.note.count({ where: { createdAt: { gte: week } } }),
+    prisma.student.findMany({ include: { class: true, absences: { where: { date: { gte: recent, lte: now } }, select: { date: true } }, examSessions: { take: 2, orderBy: { sinavTarihi: "desc" }, select: { toplamNet: true } } } })
+  ]);
+  const attention = students.map((s) => { const current = s.absences.filter((a) => a.date >= split).length; const previous = s.absences.length - current; const [latest, older] = s.examSessions; const falling = latest?.toplamNet != null && older?.toplamNet != null && latest.toplamNet < older.toplamNet; return { ...s, reasons: [current > previous && current > 0 ? `Son 7 günde ${current} devamsızlık` : "", falling ? `Son sınav neti ${latest.toplamNet?.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}` : ""].filter(Boolean) }; }).filter((s) => s.reasons.length);
+  return <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8"><PageHeader title={`Merhaba, ${user.name.split(" ")[0]}`} subtitle={`${formatDate(now)} · Bugün bir öğrencinin hikâyesine dokunun.`} actions={<Link href="/ogretmen/yonetim/ogrenciler" className={buttonVariants({ variant: "secondary" })}><Users size={17} />Öğrenci yönetimi</Link>} />
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5"><StatCard label="Öğrenciler" value={count} delta="Birlikte gelişen öğrenciler" icon={Users} /><StatCard label="Şubeler" value={classes.length} delta="Aktif sınıf grupları" icon={School} /><StatCard label="Devamsızlık" value={absenceCount} delta="Bu hafta kaydedilen" icon={CalendarX} /><StatCard label="Yeni notlar" value={noteCount} delta="Bu hafta paylaşılan ve özel notlar" icon={StickyNote} /></div>
+    <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]"><Card><div className="mb-5 flex items-center justify-between"><h2 className="text-base font-semibold">Şubelerine göz at</h2><Badge>{classes.length} şube</Badge></div>{classes.length ? <div className="grid gap-3 sm:grid-cols-2">{classes.map((c) => <Link href={`/ogretmen/sube/${encodeURIComponent(c.name)}`} key={c.id} className="group flex items-center gap-4 rounded-xl border border-slate-200 p-4 hover:border-birikim-300 hover:bg-birikim-50"><span className="flex h-12 w-12 items-center justify-center rounded-xl bg-birikim-50 text-lg font-bold text-birikim-800">{c.name}</span><span className="flex-1"><span className="block font-semibold">{c.name} Şubesi</span><span className="text-sm text-slate-600">{c._count.students} öğrenci</span></span><ArrowUpRight size={19} className="text-slate-600 group-hover:text-birikim" /></Link>)}</div> : <EmptyState title="Henüz şube yok" description="Şubeler eklendiğinde burada görünecek." />}</Card>
+    <Card><h2 className="flex items-center gap-2 text-base font-semibold"><AlertCircle size={18} className="text-birikim" />Dikkat gerektirenler</h2><p className="mt-1 text-[13px] text-slate-600">Son iki sınav ve son iki haftanın devamsızlık kayıtlarına göre.</p>{attention.length ? <ul className="mt-4 divide-y divide-slate-100">{attention.slice(0,6).map((s) => <li key={s.id}><Link href={`/ogretmen/ogrenci/${s.id}`} className="flex min-h-16 items-center justify-between gap-3 rounded-lg py-3 hover:bg-slate-50"><div><p className="text-sm font-semibold">{s.name} <span className="font-normal text-slate-600">· {s.class.name}</span></p><p className="text-[13px] text-slate-600">{s.reasons.join(" · ")}</p></div><ArrowUpRight size={18} className="shrink-0 text-birikim" /></Link></li>)}</ul> : <EmptyState title="Takip gerektiren yeni sinyal yok" description="Veriler geldikçe bu alan güncellenir." />}</Card></div>
+    <Card className="mt-6 flex flex-wrap items-center justify-between gap-4 bg-birikim-50/50"><div><h2 className="font-semibold">Bir sonraki adımı birlikte atalım</h2><p className="mt-1 text-sm text-slate-600">Bir görüşme notu ekleyin veya aileyi gelişim yolculuğuna davet edin.</p></div><div className="flex flex-wrap gap-2"><Link className={buttonVariants()} href="/ogretmen/rehberlik">Rehberlik notu ekle</Link><Link className={buttonVariants({ variant: "secondary" })} href="/ogretmen/yonetim/davet-kodlari">Davet kodları</Link></div></Card>
+  </div>;
 }

@@ -1,11 +1,13 @@
 "use client";
+import { toast } from "sonner";
 
+import { SubjectRadar } from "./ExamProgressCharts";
 import { useState, useTransition } from "react";
 import { CheckCircle2, Lock, Target } from "lucide-react";
 
 import { confirmExamSession } from "@/actions/exam-session";
 import type { ExamSessionData } from "@/lib/exam-session";
-import { HATA_TURLERI, RED, SINAV_DERSLERI, formatDate, formatDateTime } from "@/lib/constants";
+import { HATA_TURLERI, SINAV_DERSLERI, formatDate, formatDateTime } from "@/lib/constants";
 
 const SECTION_COLORS = [
   { badge: "bg-blue-500", border: "border-blue-100" },
@@ -30,7 +32,7 @@ function SectionCard({
     <div className={`bg-white rounded-xl border p-4 ${color.border}`}>
       <div className="flex items-center gap-2 mb-4">
         <span
-          className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[12px] font-bold shrink-0 ${color.badge}`}
+          className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[13px] font-bold shrink-0 ${color.badge}`}
         >
           {no}
         </span>
@@ -70,6 +72,7 @@ export default function ExamSessionView({
         await confirmExamSession(data.id, "OGRENCI");
         setOgrenciOnayAt(new Date().toISOString());
       } catch (e) {
+        toast.error(e instanceof Error ? e.message : "İşlem tamamlanamadı.");
         setHata(e instanceof Error ? e.message : "Onaylanamadı.");
       }
     });
@@ -80,42 +83,42 @@ export default function ExamSessionView({
       <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex items-center justify-between flex-wrap gap-2">
         <div>
           <div className="text-[14px] font-semibold text-slate-700">{data.sinavAdi}</div>
-          <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+          <div className="text-[13px] text-slate-600 flex items-center gap-1 mt-0.5">
             <Lock size={11} /> Bu sayfa salt-okunurdur.
           </div>
         </div>
-        <div className="text-[11px] text-slate-400">{formatDate(data.sinavTarihi)}</div>
+        <div className="text-[13px] text-slate-600">{formatDate(data.sinavTarihi)}</div>
       </div>
 
       <SectionCard no={1} title="Sınav Bilgileri">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[12px]">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[13px]">
           <div>
-            <div className="text-slate-400">Sınav Saati</div>
+            <div className="text-slate-600">Sınav Saati</div>
             <div className="text-slate-700">{data.sinavSaati ?? "-"}</div>
           </div>
           <div>
-            <div className="text-slate-400">Görüşme Tarihi</div>
+            <div className="text-slate-600">Görüşme Tarihi</div>
             <div className="text-slate-700">
               {data.gorusmeTarihi ? formatDate(data.gorusmeTarihi) : "-"}
             </div>
           </div>
           <div className="col-span-2">
-            <div className="text-slate-400">Danışman</div>
+            <div className="text-slate-600">Danışman</div>
             <div className="text-slate-700">{data.danismanAdi ?? "-"}</div>
           </div>
         </div>
       </SectionCard>
 
       <SectionCard no={2} title="Sınav Yönetimi (Zaman ve Çözüm Stratejisi)">
-        <div className="text-[12px] text-slate-500 mb-2">
+        <div className="text-[13px] text-slate-600 mb-2">
           Toplam Çözüm Süresi:{" "}
           <span className="font-medium text-slate-700">
             {data.toplamCozumSuresi ?? "-"} dk
           </span>
         </div>
-        <table className="w-full text-[12px]">
+        <table className="w-full text-[13px]">
           <thead>
-            <tr className="text-left text-slate-400">
+            <tr className="text-left text-slate-600">
               <th className="pb-1.5 font-medium">Ders</th>
               <th className="pb-1.5 font-medium">Çözüm Süresi (dk)</th>
               <th className="pb-1.5 font-medium">Çözüm Sırası</th>
@@ -134,13 +137,13 @@ export default function ExamSessionView({
       </SectionCard>
 
       <SectionCard no={3} title="Sınav Süreci Değerlendirmesi">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-[12px]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-[13px]">
           <div className="border border-slate-200 rounded-lg p-3">
             <div className="font-medium text-slate-600 mb-1">
               İçsel (Ruhsal) Problem: {data.icselProblem ? "Evet" : "Hayır"}
             </div>
             {data.icselProblem && (
-              <div className="text-slate-500">{data.icselAciklama ?? "-"}</div>
+              <div className="text-slate-600">{data.icselAciklama ?? "-"}</div>
             )}
           </div>
           <div className="border border-slate-200 rounded-lg p-3">
@@ -148,7 +151,7 @@ export default function ExamSessionView({
               Dışsal Problem: {data.dissalProblem ? "Evet" : "Hayır"}
             </div>
             {data.dissalProblem && (
-              <div className="text-slate-500">{data.dissalAciklama ?? "-"}</div>
+              <div className="text-slate-600">{data.dissalAciklama ?? "-"}</div>
             )}
           </div>
           <div className="border border-slate-200 rounded-lg p-3">
@@ -156,7 +159,7 @@ export default function ExamSessionView({
               Sınav Esnasında Hata: {data.hataYapildi ? "Evet" : "Hayır"}
             </div>
             {data.hataYapildi && (
-              <div className="text-slate-500">
+              <div className="text-slate-600">
                 {hataTurleriLabels.join(", ") || "-"}
                 {data.hataDigerAciklama ? ` (${data.hataDigerAciklama})` : ""}
               </div>
@@ -165,12 +168,13 @@ export default function ExamSessionView({
         </div>
       </SectionCard>
 
+      <SubjectRadar subjects={data.subjects} />
       <SectionCard no={4} title="Sınav Sonuç Analizi (Netler)">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div>
-            <table className="w-full text-[12px]">
+            <table className="w-full text-[13px]">
               <thead>
-                <tr className="text-left text-slate-400">
+                <tr className="text-left text-slate-600">
                   <th className="pb-1.5 font-medium">Ders</th>
                   <th className="pb-1.5 font-medium">Doğru</th>
                   <th className="pb-1.5 font-medium">Yanlış</th>
@@ -201,7 +205,7 @@ export default function ExamSessionView({
                 ["Sınıf Sırası", data.sinifSirasi],
               ].map(([label, value]) => (
                 <div key={label as string} className="bg-slate-50 rounded-lg p-2 text-center">
-                  <div className="text-[10px] text-slate-400 mb-1">{label}</div>
+                  <div className="text-[13px] text-slate-600 mb-1">{label}</div>
                   <div className="text-[14px] font-bold text-slate-700">{value ?? "-"}</div>
                 </div>
               ))}
@@ -209,7 +213,7 @@ export default function ExamSessionView({
           </div>
 
           <div>
-            <div className="text-[12px] font-medium text-slate-600 mb-2">
+            <div className="text-[13px] font-medium text-slate-600 mb-2">
               Kaçırılan (Çalışılacak) Kazanımlar
             </div>
             <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
@@ -217,13 +221,13 @@ export default function ExamSessionView({
                 const lines = (gainsByDers.get(ders) ?? []).filter((l) => l.trim().length > 0);
                 return (
                   <div key={ders} className="border border-slate-200 rounded-lg p-2.5">
-                    <div className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 mb-1">
-                      <Target size={12} style={{ color: RED }} /> {ders}
+                    <div className="flex items-center gap-1.5 text-[13px] font-medium text-slate-600 mb-1">
+                      <Target size={12}  className="text-birikim" /> {ders}
                     </div>
                     {lines.length === 0 ? (
-                      <div className="text-[11px] text-slate-300">-</div>
+                      <div className="text-[13px] text-slate-600">-</div>
                     ) : (
-                      <ul className="text-[11px] text-slate-500 list-disc pl-4 space-y-0.5">
+                      <ul className="text-[13px] text-slate-600 list-disc pl-4 space-y-0.5">
                         {lines.map((l, i) => (
                           <li key={i}>{l}</li>
                         ))}
@@ -238,15 +242,15 @@ export default function ExamSessionView({
       </SectionCard>
 
       <SectionCard no={5} title="Analiz Notları">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[12px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[13px]">
           <div>
-            <div className="text-slate-400 mb-1">Genel Değerlendirme</div>
+            <div className="text-slate-600 mb-1">Genel Değerlendirme</div>
             <div className="text-slate-600 whitespace-pre-wrap">
               {data.genelDegerlendirme ?? "-"}
             </div>
           </div>
           <div>
-            <div className="text-slate-400 mb-1">
+            <div className="text-slate-600 mb-1">
               Bir Sonraki Sınav İçin Alınacak Kararlar / Öneriler
             </div>
             <div className="text-slate-600 whitespace-pre-wrap">
@@ -259,9 +263,9 @@ export default function ExamSessionView({
       <SectionCard no={6} title="İmzalar">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="border border-slate-200 rounded-lg p-3">
-            <div className="text-[12px] font-medium text-slate-600 mb-2">Öğrenci Onayı</div>
+            <div className="text-[13px] font-medium text-slate-600 mb-2">Öğrenci Onayı</div>
             {ogrenciOnayAt ? (
-              <div className="flex items-center gap-1.5 text-[12px] text-green-600">
+              <div className="flex items-center gap-1.5 text-[13px] text-green-600">
                 <CheckCircle2 size={14} /> Onayladın · {formatDateTime(ogrenciOnayAt)}
               </div>
             ) : canConfirmAsStudent ? (
@@ -270,29 +274,29 @@ export default function ExamSessionView({
                   type="button"
                   onClick={handleConfirm}
                   disabled={pending}
-                  className="text-white text-[12px] font-medium px-3 py-1.5 rounded-lg disabled:opacity-60"
-                  style={{ background: RED }}
+                  className="text-white text-[13px] font-medium px-3 py-1.5 rounded-lg disabled:opacity-60 bg-birikim"
+
                 >
                   {pending ? "Onaylanıyor..." : "Onayla"}
                 </button>
-                {hata && <div className="text-[11px] text-red-600">{hata}</div>}
+                {hata && <div className="text-[13px] text-red-600">{hata}</div>}
               </div>
             ) : (
-              <div className="text-[11px] text-slate-400">Henüz onaylanmadı.</div>
+              <div className="text-[13px] text-slate-600">Henüz onaylanmadı.</div>
             )}
           </div>
 
           <div className="border border-slate-200 rounded-lg p-3">
-            <div className="text-[12px] font-medium text-slate-600 mb-2">
+            <div className="text-[13px] font-medium text-slate-600 mb-2">
               Rehber Öğretmen Onayı
             </div>
             {data.rehberOnayAt ? (
-              <div className="flex items-center gap-1.5 text-[12px] text-green-600">
+              <div className="flex items-center gap-1.5 text-[13px] text-green-600">
                 <CheckCircle2 size={14} /> {data.danismanAdi ?? "Rehber Öğretmen"} ·{" "}
                 {formatDateTime(data.rehberOnayAt)}
               </div>
             ) : (
-              <div className="text-[11px] text-slate-400">Henüz onaylanmadı.</div>
+              <div className="text-[13px] text-slate-600">Henüz onaylanmadı.</div>
             )}
           </div>
         </div>

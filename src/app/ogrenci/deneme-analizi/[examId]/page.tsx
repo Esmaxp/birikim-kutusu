@@ -21,7 +21,7 @@ export default async function OgrenciDenemeDetayPage({
     <div className="max-w-5xl mx-auto p-6 space-y-4">
       <Link
         href="/ogrenci/deneme-analizi"
-        className="flex items-center gap-1 text-[12px] text-slate-500 hover:text-slate-700 w-fit"
+        className="flex items-center gap-1 text-[13px] text-slate-600 hover:text-slate-700 w-fit"
       >
         <ArrowLeft size={13} /> Deneme listesine dön
       </Link>

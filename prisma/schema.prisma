@@ -16,6 +16,9 @@ datasource db {
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
+  isAdmin Boolean @default(false)
+  mustChangePassword Boolean @default(false)
+  disabledAt DateTime?
   passwordHash String
   name         String
   role         String
@@ -75,8 +78,27 @@ model Student {
   absences     Absence[]
   exam         ExamAnalysis?
   examSessions ExamSession[]
+  invites InviteCode[]
 
   @@index([classId])
+  @@unique([classId, no])
+}
+
+model InviteCode {
+  id String @id @default(cuid())
+  codeHash String @unique
+  kind String
+  studentId String
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  yakinlik String?
+  expiresAt DateTime
+  usedAt DateTime?
+  usedById String?
+  revokedAt DateTime?
+  createdById String?
+  createdAt DateTime @default(now())
+
+  @@index([studentId])
 }
 
 /// Öğrenci–veli bağı. Bir öğrencinin birden çok velisi (anne, baba, vasi),

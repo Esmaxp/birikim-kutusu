@@ -1,166 +1,30 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BarChart3,
-  BookOpen,
-  CalendarX,
-  HeartHandshake,
-  LayoutDashboard,
-  LogOut,
-  Quote,
-  StickyNote,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
-
-import { RED, ROLE_LABELS, initialsOf } from "@/lib/constants";
+import { useState } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { BookOpen, Menu, X, Search, LogOut, LayoutDashboard, Users, CalendarX, StickyNote, HeartHandshake, BarChart3, Quote, KeyRound, type LucideIcon } from "lucide-react";
 import { logoutAction, logoutAllDevicesAction } from "@/app/login/actions";
-
-const ICONS: Record<string, LucideIcon> = {
-  dashboard: LayoutDashboard,
-  users: Users,
-  book: BookOpen,
-  absence: CalendarX,
-  note: StickyNote,
-  pdr: HeartHandshake,
-  chart: BarChart3,
-  quote: Quote,
-};
-
-export type NavItem = {
-  href: string;
-  label: string;
-  icon: keyof typeof ICONS;
-  /** true ise alt yollar da aktif sayılır */
-  matchNested?: boolean;
-};
-
+import { ROLE_LABELS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import Avatar from "./Avatar";
+import { Button } from "./ui";
+import CommandPalette from "./CommandPalette";
+const ICONS: Record<string, LucideIcon> = { dashboard: LayoutDashboard, users: Users, book: BookOpen, absence: CalendarX, note: StickyNote, pdr: HeartHandshake, chart: BarChart3, quote: Quote };
+export type NavItem = { href: string; label: string; icon: keyof typeof ICONS; matchNested?: boolean };
 export type NavSection = { title?: string; items: NavItem[] };
-
-export type ShellUser = {
-  name: string;
-  role: string;
-  title: string | null;
-};
-
-export default function AppShell({
-  user,
-  sections,
-  pageTitle,
-  children,
-}: {
-  user: ShellUser;
-  sections: NavSection[];
-  pageTitle?: string;
-  children: React.ReactNode;
-}) {
-  const pathname = usePathname();
-
-  const isActive = (item: NavItem) =>
-    item.matchNested
-      ? pathname === item.href || pathname.startsWith(item.href + "/")
-      : pathname === item.href;
-
-  return (
-    <div className="min-h-screen bg-[#eef1f5] print:bg-white print:block flex">
-      <aside className="print:hidden w-56 bg-white border-r border-slate-200 shrink-0 flex flex-col sticky top-0 h-screen">
-        <div className="flex items-center gap-2 px-4 py-4 border-b border-slate-100">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
-            style={{ background: RED }}
-          >
-            <BookOpen size={16} />
-          </div>
-          <div>
-            <div className="text-[11px] font-bold leading-none">BİRİKİM</div>
-            <div className="text-[13px] font-bold leading-tight">Kutusu</div>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto">
-          {sections.map((section, si) => (
-            <div
-              key={si}
-              className={"px-4 py-3 " + (si > 0 ? "border-t border-slate-100" : "")}
-            >
-              {section.title && (
-                <div className="text-[10px] font-semibold text-slate-400 tracking-wider mb-2">
-                  {section.title}
-                </div>
-              )}
-              <div className="space-y-1">
-                {section.items.map((item) => {
-                  const Icon = ICONS[item.icon] ?? LayoutDashboard;
-                  const active = isActive(item);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={
-                        "w-full flex items-center gap-2 text-[13px] py-1.5 px-2 rounded-lg " +
-                        (active
-                          ? "text-white font-semibold"
-                          : "text-slate-600 hover:bg-slate-50")
-                      }
-                      style={active ? { background: RED } : undefined}
-                    >
-                      <Icon size={14} /> {item.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="px-4 py-3 border-t border-slate-100 space-y-1">
-          <form action={logoutAction}>
-            <button
-              type="submit"
-              className="w-full flex items-center gap-2 text-[13px] text-slate-400 py-1.5 px-2 rounded-lg hover:bg-slate-50 hover:text-red-500"
-            >
-              <LogOut size={14} /> Çıkış Yap
-            </button>
-          </form>
-          <form action={logoutAllDevicesAction}>
-            <button
-              type="submit"
-              className="w-full text-left text-[11px] text-slate-400 py-1 px-2 rounded-lg hover:bg-slate-50 hover:text-red-500"
-              title="Bu hesaba ait tüm oturumları sonlandırır"
-            >
-              Tüm cihazlardan çıkış
-            </button>
-          </form>
-        </div>
-      </aside>
-
-      <div className="flex-1 min-w-0 flex flex-col">
-        <header className="print:hidden bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between">
-          <div className="text-[15px] font-bold text-slate-700">
-            {pageTitle ?? "Birikim Kutusu"}
-          </div>
-          <div className="flex items-center gap-2 pl-3">
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-semibold"
-              style={{ background: RED }}
-            >
-              {initialsOf(user.name)}
-            </div>
-            <div className="leading-tight">
-              <div className="text-[13px] text-slate-600 font-medium">
-                {user.name}
-              </div>
-              <div className="text-[10px] text-slate-400">
-                {user.title ?? ROLE_LABELS[user.role]}
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1">{children}</main>
-      </div>
-    </div>
-  );
+export type ShellUser = { name: string; role: string; title: string | null };
+function Brand() { return <Link href="/" aria-label="Birikim Kutusu ana sayfa" className="flex items-center gap-3"><span className="rounded-xl bg-birikim p-2.5 text-white"><BookOpen size={23} /></span><span><span className="block text-base font-bold leading-tight">Birikim Kutusu</span><span className="text-xs tracking-wider text-slate-600">BİRLİKTE GELİŞİYORUZ</span></span></Link>; }
+export default function AppShell({ user, sections, pageTitle, children }: { user: ShellUser; sections: NavSection[]; pageTitle?: string; children: React.ReactNode }) {
+  const pathname = usePathname(); const [drawer, setDrawer] = useState(false); const [search, setSearch] = useState(false);
+  const teacher = user.role === "TEACHER";
+  const active = (item: NavItem) => pathname === item.href || !!item.matchNested && pathname.startsWith(item.href + "/");
+  const navigation = <nav aria-label="Ana gezinme" className="space-y-7 px-4 py-6">{sections.map((section, i) => <div key={i}>{section.title && <p className="mb-2 px-3 text-xs font-semibold tracking-wider text-slate-600">{section.title}</p>}<div className="space-y-1">{section.items.map((item) => { const Icon = ICONS[item.icon] || Users; return <Link onClick={() => setDrawer(false)} href={item.href} key={item.href} aria-current={active(item) ? "page" : undefined} className={cn("flex min-h-11 items-center gap-3 rounded-lg border-l-2 px-3 py-2 text-sm", active(item) ? "border-birikim bg-birikim-50 font-semibold text-birikim-800" : "border-transparent text-slate-600 hover:bg-slate-50")}><Icon size={19} aria-hidden />{item.label}</Link>; })}</div></div>)}</nav>;
+  const account = <div className="space-y-2 border-t border-slate-200 p-4"><div className="mb-3 flex items-center gap-3"><Avatar name={user.name} size={40} /><div className="min-w-0"><p className="truncate text-sm font-semibold">{user.name}</p><p className="truncate text-[13px] text-slate-600">{user.title || ROLE_LABELS[user.role]}</p></div></div><Link href="/hesap/sifre" className="flex min-h-10 items-center gap-2 text-sm text-slate-600"><KeyRound size={16} />Şifremi değiştir</Link><form action={logoutAction}><Button variant="ghost" className="w-full justify-start"><LogOut size={16} />Çıkış yap</Button></form><form action={logoutAllDevicesAction}><Button variant="ghost" size="sm" className="w-full justify-start">Tüm cihazlardan çıkış</Button></form></div>;
+  return <div className="min-h-screen bg-[#f6f7f9] lg:flex print:block print:bg-white">
+    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-slate-200/70 bg-white lg:flex print:hidden"><div className="border-b border-slate-100 p-5"><Brand /></div><div className="flex-1 overflow-y-auto">{navigation}</div>{account}</aside>
+    <div className="min-w-0 flex-1"><header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b border-slate-200/70 bg-white/95 px-4 backdrop-blur lg:px-8 print:hidden"><div className="flex min-w-0 items-center gap-3">{teacher && <Button variant="ghost" size="icon" aria-label="Menüyü aç" onClick={() => setDrawer(true)} className="lg:hidden"><Menu size={22} /></Button>}<span className="truncate text-sm font-semibold text-slate-700">{pageTitle || "Birikim Kutusu"}</span></div><div className="flex items-center gap-2">{teacher && <Button variant="secondary" aria-label="Öğrenci ara" onClick={() => setSearch(true)}><Search size={18} /><span className="hidden sm:inline">Öğrenci ara</span><kbd className="hidden text-xs text-slate-600 md:inline">Ctrl K</kbd></Button>}<details className="relative lg:hidden"><summary aria-label="Hesabım" className="flex min-h-10 cursor-pointer list-none items-center"><Avatar name={user.name} size={34} /></summary><div className="absolute right-0 top-12 z-40 w-64 rounded-xl border bg-white shadow-xl">{account}</div></details></div></header>
+    <main className={cn("min-w-0", !teacher && "pb-24 lg:pb-0 print:pb-0")}>{children}</main></div>
+    {teacher ? <><Dialog.Root open={drawer} onOpenChange={setDrawer}><Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/35 print:hidden" /><Dialog.Content className="fixed inset-y-0 left-0 z-[60] flex w-[min(85vw,320px)] flex-col bg-white shadow-xl print:hidden"><div className="flex items-center justify-between border-b p-4"><Dialog.Title className="sr-only">Ana menü</Dialog.Title><Dialog.Description className="sr-only">Panel ve şube sayfalarına ulaşın.</Dialog.Description><Brand /><Dialog.Close asChild><Button variant="ghost" size="icon" aria-label="Menüyü kapat"><X size={20} /></Button></Dialog.Close></div><div className="flex-1 overflow-y-auto">{navigation}{account}</div></Dialog.Content></Dialog.Portal></Dialog.Root><CommandPalette open={search} onOpenChange={setSearch} /></> : <nav aria-label="Mobil gezinme" className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-slate-200 bg-white px-1 pb-[env(safe-area-inset-bottom)] lg:hidden print:hidden">{sections.flatMap((s) => s.items).slice(0, 5).map((item) => { const Icon = ICONS[item.icon] || Users; return <Link key={item.href} href={item.href} aria-current={active(item) ? "page" : undefined} className={cn("flex min-h-16 min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 text-center text-xs leading-tight", active(item) ? "font-semibold text-birikim" : "text-slate-600 hover:bg-slate-50")}><Icon size={21} aria-hidden /><span>{item.label}</span></Link>; })}</nav>}
+  </div>;
 }

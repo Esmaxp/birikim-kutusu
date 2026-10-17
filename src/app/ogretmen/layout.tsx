@@ -32,6 +32,10 @@ export default async function OgretmenLayout({
     },
   ];
 
+  sections.push({ items: [{ href: "/ogretmen/yonetim/ogrenciler", label: "Öğrenci yönetimi", icon: "users" }, { href: "/ogretmen/yonetim/davet-kodlari", label: "Davet kodları", icon: "users" }] });
+
+  if (user.isAdmin) sections.push({ items: [{ href: "/ogretmen/yonetim/ogretmenler", label: "Yönetim", icon: "users", matchNested: true }] });
+
   return (
     <AppShell
       user={{ name: user.name, role: user.role, title: user.title }}

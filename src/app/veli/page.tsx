@@ -1,9 +1,12 @@
+import { NetTrend } from "@/components/ExamProgressCharts";
+import { PageHeader, StatCard } from "@/components/ui";
+import LinkChildForm from "./LinkChildForm";
 import Link from "next/link";
 import { BookOpen, CalendarX, LayoutDashboard, Quote as QuoteIcon, StickyNote } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
 import { requireParentChildren } from "@/lib/auth";
-import { RED, formatDate, formatDateTime } from "@/lib/constants";
+import { formatDate, formatDateTime } from "@/lib/constants";
 import Avatar from "@/components/Avatar";
 
 export default async function VeliPage({
@@ -16,13 +19,13 @@ export default async function VeliPage({
 
   if (children.length === 0) {
     return (
-      <div className="max-w-3xl mx-auto p-6">
+      <div className="max-w-3xl mx-auto p-6"><LinkChildForm />
         <div className="bg-white rounded-xl border border-slate-200 p-10 text-center">
           <div className="text-[14px] font-semibold text-slate-600">
-            Hesabınıza bağlı öğrenci bulunamadı
+            HesabÄ±nÄ±za baÄŸlÄ± Ã¶ÄŸrenci bulunamadÄ±
           </div>
-          <p className="text-[12px] text-slate-400 mt-1">
-            Lütfen okul yönetimiyle iletişime geçin.
+          <p className="text-[13px] text-slate-600 mt-1">
+            LÃ¼tfen okul yÃ¶netimiyle iletiÅŸime geÃ§in.
           </p>
         </div>
       </div>
@@ -66,9 +69,9 @@ export default async function VeliPage({
   ]);
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-5">
+    <div className="max-w-5xl mx-auto p-6 space-y-5"><PageHeader title="Ã‡ocuÄŸumun geliÅŸimi" subtitle="Okuldan gÃ¼ncel haberler ve geliÅŸim Ã¶zeti" />
       {children.length > 1 && (
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 overflow-x-auto pb-2">
           {children.map((c) => {
             const active = c.id === student.id;
             return (
@@ -76,15 +79,15 @@ export default async function VeliPage({
                 key={c.id}
                 href={`/veli?ogrenci=${c.id}`}
                 className={
-                  "flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full border " +
+                  "flex shrink-0 items-center gap-1.5 pl-1 pr-3 py-1 rounded-full border " +
                   (active
-                    ? "border-transparent text-white"
+                    ? "border-transparent text-white bg-birikim"
                     : "border-slate-200 text-slate-600 bg-white")
                 }
-                style={active ? { background: RED } : undefined}
+                aria-current={active ? "page" : undefined}
               >
-                <Avatar name={c.name} size={22} />
-                <span className="text-[12px]">{c.name}</span>
+                <Avatar name={c.name} size={32} />
+                <span className="text-[13px]">{c.name}</span>
               </Link>
             );
           })}
@@ -97,41 +100,49 @@ export default async function VeliPage({
           <div className="text-[15px] font-semibold text-slate-800">
             {student.name}
           </div>
-          <div className="text-[12px] text-slate-400">
-            {student.class.name} · No: {student.no} · {absences.length}{" "}
-            devamsızlık
+          <div className="text-[13px] text-slate-600">
+            {student.class.name} Â· No: {student.no} Â· {absences.length}{" "}
+            devamsÄ±zlÄ±k
           </div>
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="Okunan kitap" value={books.filter((b) => b.status === "Okundu").length} icon={BookOpen} />
+        <StatCard label="Son deneme neti" value={examSessions[0]?.toplamNet?.toLocaleString("tr-TR", { maximumFractionDigits: 1 }) ?? "â€”"} icon={LayoutDashboard} />
+        <StatCard label="DevamsÄ±zlÄ±k" value={`${absences.length} gÃ¼n`} icon={CalendarX} />
+        <StatCard label="Yeni notlar" value={notes.filter((n) => !n.readAt).length} icon={StickyNote} />
+      </div>
+      <NetTrend data={[...examSessions].reverse().filter((e) => e.toplamNet !== null).map((e) => ({ ad: e.sinavAdi, net: e.toplamNet! }))} />
+      <details className="rounded-xl border border-slate-200 bg-white p-4"><summary className="cursor-pointer font-medium">BaÅŸka bir Ã§ocuÄŸumu ekle</summary><div className="mt-4"><LinkChildForm /></div></details>
       <div className="bg-white rounded-xl border border-slate-200 p-4">
         <div className="text-[13px] font-semibold text-slate-700 mb-3 flex items-center gap-1.5">
-          <LayoutDashboard size={14} style={{ color: RED }} /> Deneme Analizleri (
+          <LayoutDashboard size={14}  className="text-birikim" /> Deneme Analizleri (
           {examSessions.length})
         </div>
         {examSessions.length === 0 ? (
-          <div className="text-[12px] text-slate-400">
-            Henüz deneme analizi yayınlanmadı.
+          <div className="text-[13px] text-slate-600">
+            HenÃ¼z deneme analizi yayÄ±nlanmadÄ±.
           </div>
         ) : (
-          <div className="space-y-1.5 max-h-64 overflow-y-auto">
+          <div tabIndex={0} role="region" aria-label="KayÄ±t listesi" className="space-y-1.5 max-h-64 overflow-y-auto">
             {examSessions.map((e) => (
               <div
                 key={e.id}
-                className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 rounded-lg px-3 py-2"
               >
                 <div className="min-w-0">
-                  <div className="text-[12px] font-medium text-slate-700 truncate">
+                  <div className="text-[13px] font-medium text-slate-700 truncate">
                     {e.sinavAdi}
                   </div>
-                  <div className="text-[11px] text-slate-400">
+                  <div className="text-[13px] text-slate-600">
                     {formatDate(e.sinavTarihi)}
                   </div>
                 </div>
-                <div className="flex items-center gap-3 text-[11px] text-slate-500 shrink-0">
+                <div className="flex items-center gap-3 text-[13px] text-slate-600 shrink-0">
                   <span>Net: {e.toplamNet ?? "-"}</span>
                   <span>Puan: {e.puan ?? "-"}</span>
-                  <span>Yüzdelik: {e.yuzdelikDilim ?? "-"}</span>
+                  <span>YÃ¼zdelik: {e.yuzdelikDilim ?? "-"}</span>
                 </div>
               </div>
             ))}
@@ -142,27 +153,27 @@ export default async function VeliPage({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="text-[13px] font-semibold text-slate-700 mb-3 flex items-center gap-1.5">
-            <BookOpen size={14} style={{ color: RED }} /> Kitap Köşesi (
+            <BookOpen size={14}  className="text-birikim" /> Kitap KÃ¶ÅŸesi (
             {books.length})
           </div>
           {books.length === 0 ? (
-            <div className="text-[12px] text-slate-400">Kitap eklenmemiş.</div>
+            <div className="text-[13px] text-slate-600">Kitap eklenmemiÅŸ.</div>
           ) : (
-            <div className="space-y-1.5 max-h-64 overflow-y-auto">
+            <div tabIndex={0} role="region" aria-label="KayÄ±t listesi" className="space-y-1.5 max-h-64 overflow-y-auto">
               {books.map((b) => (
                 <div
                   key={b.id}
-                  className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2"
+                  className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 rounded-lg px-3 py-2"
                 >
                   <div className="min-w-0">
-                    <div className="text-[12px] font-medium text-slate-700 truncate">
+                    <div className="text-[13px] font-medium text-slate-700 truncate">
                       {b.title}
                     </div>
-                    <div className="text-[11px] text-slate-400 truncate">
+                    <div className="text-[13px] text-slate-600 truncate">
                       {b.author ?? "-"}
                     </div>
                   </div>
-                  <span className="text-[10px] text-slate-500 bg-white border border-slate-200 rounded-full px-2 py-0.5 shrink-0">
+                  <span className="text-[13px] text-slate-600 bg-white border border-slate-200 rounded-full px-2 py-0.5 shrink-0">
                     {b.status}
                   </span>
                 </div>
@@ -173,16 +184,16 @@ export default async function VeliPage({
 
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="text-[13px] font-semibold text-slate-700 mb-3 flex items-center gap-1.5">
-            <QuoteIcon size={14} style={{ color: RED }} /> Beğendiği Sözler
+            <QuoteIcon size={14}  className="text-birikim" /> BeÄŸendiÄŸi SÃ¶zler
           </div>
           {quotes.length === 0 ? (
-            <div className="text-[12px] text-slate-400">Söz kaydedilmemiş.</div>
+            <div className="text-[13px] text-slate-600">SÃ¶z kaydedilmemiÅŸ.</div>
           ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
+            <div tabIndex={0} role="region" aria-label="KayÄ±t listesi" className="space-y-2 max-h-64 overflow-y-auto">
               {quotes.map((q) => (
                 <div key={q.id} className="bg-slate-50 rounded-lg px-3 py-2">
-                  <p className="text-[12px] text-slate-600 italic">“{q.text}”</p>
-                  <div className="text-[10px] text-slate-400 mt-1">
+                  <p className="text-[13px] text-slate-600 italic">â€œ{q.text}â€</p>
+                  <div className="text-[13px] text-slate-600 mt-1">
                     {q.source ?? "-"}
                   </div>
                 </div>
@@ -193,23 +204,23 @@ export default async function VeliPage({
 
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="text-[13px] font-semibold text-slate-700 mb-3 flex items-center gap-1.5">
-            <StickyNote size={14} style={{ color: RED }} /> Paylaşılan Notlar
+            <StickyNote size={14}  className="text-birikim" /> PaylaÅŸÄ±lan Notlar
           </div>
           {notes.length === 0 ? (
-            <div className="text-[12px] text-slate-400">Not yok.</div>
+            <div className="text-[13px] text-slate-600">Not yok.</div>
           ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
+            <div tabIndex={0} role="region" aria-label="KayÄ±t listesi" className="space-y-2 max-h-64 overflow-y-auto">
               {notes.map((n) => (
                 <div key={n.id} className="bg-slate-50 rounded-lg px-3 py-2">
-                  <div className="text-[12px] font-medium text-slate-700">
+                  <div className="text-[13px] font-medium text-slate-700">
                     {n.title ?? "Not"}
                   </div>
-                  <p className="text-[12px] text-slate-500 whitespace-pre-wrap">
+                  <p className="text-[13px] text-slate-600 whitespace-pre-wrap">
                     {n.body}
                   </p>
-                  <div className="text-[10px] text-slate-400 mt-1">
-                    {n.author?.name ?? "-"} ·{" "}
-                    {n.author?.title ?? "Öğretmen"} ·{" "}
+                  <div className="text-[13px] text-slate-600 mt-1">
+                    {n.author?.name ?? "-"} Â·{" "}
+                    {n.author?.title ?? "Ã–ÄŸretmen"} Â·{" "}
                     {formatDateTime(n.createdAt)}
                   </div>
                 </div>
@@ -220,19 +231,19 @@ export default async function VeliPage({
 
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="text-[13px] font-semibold text-slate-700 mb-3 flex items-center gap-1.5">
-            <CalendarX size={14} style={{ color: RED }} /> Devamsızlıklar
+            <CalendarX size={14}  className="text-birikim" /> DevamsÄ±zlÄ±klar
           </div>
           {absences.length === 0 ? (
-            <div className="text-[12px] text-slate-400">Devamsızlık yok.</div>
+            <div className="text-[13px] text-slate-600">DevamsÄ±zlÄ±k yok.</div>
           ) : (
-            <div className="space-y-1.5 max-h-64 overflow-y-auto">
+            <div tabIndex={0} role="region" aria-label="KayÄ±t listesi" className="space-y-1.5 max-h-64 overflow-y-auto">
               {absences.map((a) => (
                 <div
                   key={a.id}
-                  className="flex items-center justify-between text-[12px] bg-slate-50 rounded-lg px-3 py-2"
+                  className="flex items-center justify-between text-[13px] bg-slate-50 rounded-lg px-3 py-2"
                 >
                   <span className="text-slate-600">{formatDate(a.date)}</span>
-                  <span className="text-slate-400">{a.reason}</span>
+                  <span className="text-slate-600">{a.reason}</span>
                 </div>
               ))}
             </div>

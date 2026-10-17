@@ -1,5 +1,7 @@
 "use client";
 
+import { parseUploadUrl } from "@/lib/upload-url";
+
 import {
   CartesianGrid,
   Line,
@@ -40,11 +42,11 @@ export default function ExamAnalysisView({
   if (bosMu) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-10 text-center">
-        <FileText size={30} className="mx-auto mb-3 text-slate-300" />
+        <FileText size={30} className="mx-auto mb-3 text-slate-600" />
         <div className="text-[14px] font-semibold text-slate-600">
           Henüz deneme analizi yayınlanmadı
         </div>
-        <p className="text-[12px] text-slate-400 mt-1 max-w-sm mx-auto">
+        <p className="text-[13px] text-slate-600 mt-1 max-w-sm mx-auto">
           Öğretmenin sınav sonuçlarını sisteme girmesinin ardından analizin
           burada görünecek.
         </p>
@@ -59,7 +61,7 @@ export default function ExamAnalysisView({
           <div className="text-[13px] font-semibold text-slate-700">
             {studentName} · Deneme Analizi
           </div>
-          <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+          <div className="text-[13px] text-slate-600 flex items-center gap-1 mt-0.5">
             <Lock size={11} /> Bu sayfa salt-okunurdur. Veriler öğretmenin
             girdiği sınav sonuçlarından oluşur.
           </div>
@@ -67,7 +69,7 @@ export default function ExamAnalysisView({
         <div className="flex items-center gap-5">
           <div className="text-center">
             <div className="text-[18px] font-bold text-slate-800">{ortalama}</div>
-            <div className="text-[10px] text-slate-400">Ortalama</div>
+            <div className="text-[13px] text-slate-600">Ortalama</div>
           </div>
           <div className="text-center">
             <div
@@ -80,13 +82,13 @@ export default function ExamAnalysisView({
               {trend >= 0 ? "+" : ""}
               {trend}
             </div>
-            <div className="text-[10px] text-slate-400">Gelişim</div>
+            <div className="text-[13px] text-slate-600">Gelişim</div>
           </div>
           <div className="text-center">
             <div className="text-[18px] font-bold text-slate-800">
               {data.puanlar.length}
             </div>
-            <div className="text-[10px] text-slate-400">Deneme</div>
+            <div className="text-[13px] text-slate-600">Deneme</div>
           </div>
         </div>
       </div>
@@ -105,12 +107,12 @@ export default function ExamAnalysisView({
                 <CartesianGrid stroke="#f1f1f1" vertical={false} />
                 <XAxis
                   dataKey="ay"
-                  tick={{ fontSize: 11, fill: "#94a3b8" }}
+                  tick={{ fontSize: 12, fill: "#475569" }}
                   axisLine={{ stroke: "#e5e7eb" }}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "#94a3b8" }}
+                  tick={{ fontSize: 12, fill: "#475569" }}
                   axisLine={false}
                   tickLine={false}
                   width={28}
@@ -141,12 +143,12 @@ export default function ExamAnalysisView({
             <div className="text-[13px] font-semibold text-slate-700">
               Sınav Çözüm Sırası ve Süreler
             </div>
-            <div className="text-[11px] text-slate-400 flex items-center gap-1">
+            <div className="text-[13px] text-slate-600 flex items-center gap-1">
               <Clock size={12} /> Toplam {toplamSure} dk
             </div>
           </div>
           {data.dersler.length === 0 ? (
-            <div className="text-[12px] text-slate-400">
+            <div className="text-[13px] text-slate-600">
               Süre bilgisi girilmemiş.
             </div>
           ) : (
@@ -155,17 +157,17 @@ export default function ExamAnalysisView({
                 const oran = toplamSure ? (row.dakika / toplamSure) * 100 : 0;
                 return (
                   <div key={row.id}>
-                    <div className="flex items-center justify-between text-[12px] mb-0.5">
+                    <div className="flex items-center justify-between text-[13px] mb-0.5">
                       <span className="text-slate-600">
-                        <span className="text-slate-400 mr-1">{i + 1}.</span>
+                        <span className="text-slate-600 mr-1">{i + 1}.</span>
                         {row.ders}
                       </span>
-                      <span className="text-slate-500">{row.dakika} dk</span>
+                      <span className="text-slate-600">{row.dakika} dk</span>
                     </div>
                     <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                       <div
-                        className="h-full rounded-full"
-                        style={{ width: `${oran}%`, background: RED }}
+                        className="h-full rounded-full bg-birikim"
+                        style={{ width: `${oran}%` }}
                       />
                     </div>
                   </div>
@@ -194,22 +196,22 @@ export default function ExamAnalysisView({
         </div>
       </div>
 
-      {data.dosyaAdi && (
+      {data.dosyaAdi && parseUploadUrl(data.dosyaUrl, "any") && (
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="text-[13px] font-semibold text-slate-700 mb-2">
             Sınav Sonuç Belgesi
           </div>
           <div className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
-            <div className="flex items-center gap-2 text-[12px] text-slate-600 truncate">
-              <FileText size={14} style={{ color: RED }} /> {data.dosyaAdi}
+            <div className="flex items-center gap-2 text-[13px] text-slate-600 truncate">
+              <FileText size={14}  className="text-birikim" /> {data.dosyaAdi}
             </div>
-            {data.dosyaUrl && (
+            {parseUploadUrl(data.dosyaUrl, "any") && (
               <a
-                href={data.dosyaUrl}
+                href={parseUploadUrl(data.dosyaUrl, "any") ?? undefined}
                 target="_blank"
-                rel="noreferrer"
-                className="text-[12px] font-medium shrink-0"
-                style={{ color: RED }}
+                rel="noopener noreferrer"
+                className="text-[13px] font-medium shrink-0 text-birikim"
+
               >
                 Görüntüle
               </a>

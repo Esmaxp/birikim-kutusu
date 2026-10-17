@@ -1,4 +1,6 @@
-import { avatarColorOf, initialsOf } from "@/lib/constants";
+
+import { parseUploadUrl } from "@/lib/upload-url";
+import { initialsOf } from "@/lib/constants";
 
 export default function Avatar({
   name,
@@ -9,11 +11,11 @@ export default function Avatar({
   size?: number;
   photoUrl?: string | null;
 }) {
-  if (photoUrl) {
+  if (parseUploadUrl(photoUrl, "image")) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={photoUrl}
+        src={parseUploadUrl(photoUrl, "image") ?? undefined}
         alt={name}
         className="rounded-full object-cover shrink-0"
         style={{ width: size, height: size }}
@@ -23,10 +25,8 @@ export default function Avatar({
 
   return (
     <div
-      className={`rounded-full flex items-center justify-center text-white font-semibold shrink-0 ${avatarColorOf(
-        name
-      )}`}
-      style={{ width: size, height: size, fontSize: size * 0.34 }}
+      className="rounded-full flex items-center justify-center text-birikim-900 bg-birikim-100 font-semibold shrink-0"
+      style={{ width: size, height: size, fontSize: Math.max(12, size * 0.34) }}
       aria-hidden
     >
       {initialsOf(name)}

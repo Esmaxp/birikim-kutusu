@@ -5,6 +5,7 @@ import { Backpack, Monitor, Users, type LucideIcon } from "lucide-react";
  * /login/<slug> ve /kayit/<slug> sayfası vardır.
  */
 export type AuthRole = {
+  registerEnabled: boolean;
   slug: string;
   key: string;
   buttonLabel: string;
@@ -18,6 +19,7 @@ export type AuthRole = {
 
 export const AUTH_ROLES: AuthRole[] = [
   {
+    registerEnabled: false,
     slug: "ogretmen",
     key: "TEACHER",
     buttonLabel: "ÖĞRETMEN GİRİŞİ",
@@ -29,6 +31,7 @@ export const AUTH_ROLES: AuthRole[] = [
     icon: Monitor,
   },
   {
+    registerEnabled: true,
     slug: "ogrenci",
     key: "STUDENT",
     buttonLabel: "ÖĞRENCİ GİRİŞİ",
@@ -40,6 +43,7 @@ export const AUTH_ROLES: AuthRole[] = [
     icon: Backpack,
   },
   {
+    registerEnabled: true,
     slug: "veli",
     key: "PARENT",
     buttonLabel: "VELİ GİRİŞİ",

@@ -16,6 +16,7 @@ const eslintConfig = [
     ignores: [
       "node_modules/**",
       ".next/**",
+      "next-env.d.ts",
       "birikim-kutusu-sistemi.jsx",
     ],
   },

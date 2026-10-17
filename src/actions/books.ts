@@ -1,5 +1,6 @@
 "use server";
 
+import { requireUploadUrl, sanitizeFileName } from "@/lib/upload-url";
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
@@ -40,9 +41,9 @@ export async function addBook(formData: FormData) {
       pages: optInt(formData.get("pages"), 20000),
       rating: optInt(formData.get("rating"), 5),
       review: optStr(formData.get("review"), 2000),
-      coverUrl: optStr(formData.get("coverUrl"), 500),
-      fileUrl: optStr(formData.get("fileUrl"), 500),
-      fileName: optStr(formData.get("fileName"), 250),
+      coverUrl: requireUploadUrl(formData.get("coverUrl"), "image"),
+      fileUrl: requireUploadUrl(formData.get("fileUrl"), "document"),
+      fileName: sanitizeFileName(formData.get("fileName")),
       addedById: user.id,
     },
   });

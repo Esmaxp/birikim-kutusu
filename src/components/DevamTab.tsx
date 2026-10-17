@@ -1,7 +1,10 @@
-import { CalendarX, X } from "lucide-react";
+import { FeedbackForm } from "@/components/ui/feedback";
+import AbsenceList from "./AbsenceList";
 
-import { addAbsence, deleteAbsence } from "@/actions/absences";
-import { RED, formatDate } from "@/lib/constants";
+import { CalendarX } from "lucide-react";
+
+import { addAbsence } from "@/actions/absences";
+
 
 export type TabAbsence = { id: string; date: string; reason: string };
 
@@ -15,7 +18,7 @@ export default function DevamTab({
 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-5">
-      <form
+      <FeedbackForm
         action={addAbsence}
         className="bg-white rounded-xl border border-slate-200 p-4 space-y-2 h-fit"
       >
@@ -25,50 +28,30 @@ export default function DevamTab({
         <input type="hidden" name="studentId" value={studentId} />
         <input
           required
-          type="date"
+          aria-label="Devamsızlık tarihi" type="date"
           name="date"
-          className="w-full text-[12px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
+          className="w-full text-[13px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
         />
-        <input
+        <input aria-label="Sebep"
           name="reason"
           placeholder="Sebep"
-          className="w-full text-[12px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
+          className="w-full text-[13px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
         />
         <button
           type="submit"
-          className="w-full text-[12px] text-white rounded-md py-1.5"
-          style={{ background: RED }}
+          className="w-full text-[13px] text-white rounded-md py-1.5 bg-birikim"
+
         >
           Kaydet
         </button>
-      </form>
+      </FeedbackForm>
 
       <div className="bg-white rounded-xl border border-slate-200 p-4">
         <div className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-700 mb-3">
-          <CalendarX size={14} style={{ color: RED }} /> Devamsızlıklar (
+          <CalendarX size={14}  className="text-birikim" /> Devamsızlıklar (
           {absences.length})
         </div>
-        {absences.length === 0 ? (
-          <div className="text-[12px] text-slate-400">Kayıt yok.</div>
-        ) : (
-          <div className="space-y-1.5">
-            {absences.map((a) => (
-              <div
-                key={a.id}
-                className="flex items-center justify-between text-[12px] text-slate-600 bg-slate-50 rounded-lg px-3 py-2"
-              >
-                <span>
-                  {formatDate(a.date)} · {a.reason}
-                </span>
-                <form action={deleteAbsence.bind(null, a.id)}>
-                  <button className="text-slate-300 hover:text-red-500">
-                    <X size={13} />
-                  </button>
-                </form>
-              </div>
-            ))}
-          </div>
-        )}
+        <AbsenceList absences={absences} editable />
       </div>
     </div>
   );

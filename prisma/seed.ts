@@ -1,6 +1,11 @@
+import { loadLocalEnv, assertDevOnly, isProductionLike } from "../scripts/guard-dev-only.mjs";
+import { generateInviteCode, hashInviteCode, INVITE_EXPIRY_DAYS } from "../src/lib/invite";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+loadLocalEnv();
+assertDevOnly();
+if (isProductionLike() && !process.env.SEED_PASSWORD) throw new Error("SEED_PASSWORD is required when seeding production-like environments.");
 const prisma = new PrismaClient();
 
 const SUBELER = ["5A", "5B", "5C", "6A", "6B"];
@@ -23,7 +28,8 @@ const NAME_POOL = [
   "Nil Aktaş",
 ];
 
-const DEFAULT_PASSWORD = "birikim123";
+const DEFAULT_PASSWORD = process.env.SEED_PASSWORD || "birikim123";
+if (DEFAULT_PASSWORD.length < 8 || Buffer.byteLength(DEFAULT_PASSWORD) > 72) throw new Error("SEED_PASSWORD must be 8+ characters and at most 72 bytes.");
 
 /** "Elif Kaya" -> "elif.kaya" (Türkçe karakterler sadeleştirilir) */
 function slugify(name: string) {
@@ -75,6 +81,7 @@ async function main() {
       passwordHash: pw,
       name: "Ayşe Yılmaz",
       role: "TEACHER",
+      isAdmin: true,
       title: "Sınıf Rehber Öğretmeni",
     },
   });
@@ -138,7 +145,7 @@ async function main() {
           veliAdi: `Ayşe ${soyad}`,
           telefon: `0555 ${100 + i} ${20 + subeIndex} ${10 + i}`,
           adres: `Örnek Mah. Çınar Sok. No:${i + 1}, İstanbul`,
-          photoUrl: subeIndex === 0 && i === 0 ? "/uploads/seed-avatar-elif.svg" : null,
+          photoUrl: null,
           parents: { create: [{ parentId: anne.id, yakinlik: "ANNE" }] },
         },
       });
@@ -403,8 +410,18 @@ async function main() {
     },
   });
 
+  if (process.env.NODE_ENV !== "production") {
+    const school = await prisma.schoolClass.findFirstOrThrow();
+    const unregistered = await prisma.student.create({ data: { name: "Davet Test", no: 9999, classId: school.id } });
+    for (const kind of ["STUDENT", "PARENT"]) {
+      const code = generateInviteCode();
+      await prisma.inviteCode.create({ data: { codeHash: hashInviteCode(code), kind, studentId: unregistered.id, yakinlik: kind === "PARENT" ? "VELI" : null, createdById: teacher.id, expiresAt: new Date(Date.now() + INVITE_EXPIRY_DAYS * 86400000) } });
+      console.log(`Demo invite (${kind}, Davet Test): ${code}`);
+    }
+  }
+
   console.log("\n✓ Seed tamamlandı.\n");
-  console.log("Demo hesaplar (şifre: " + DEFAULT_PASSWORD + ")");
+  console.log("Demo hesaplar oluşturuldu. Şifre SEED_PASSWORD ile belirlenir (geliştirme varsayılanı README içinde). ");
   console.log("  Öğretmen : ogretmen@birikim.k12.tr");
   console.log("  Rehber   : pdr@birikim.k12.tr (öğretmen girişi)");
   console.log("  Öğrenci  : elif.kaya@ogrenci.birikim.k12.tr");

@@ -1,5 +1,6 @@
 "use server";
 
+import { requireUploadUrl } from "@/lib/upload-url";
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
@@ -18,7 +19,7 @@ export async function updateStudentPhoto(studentId: string, photoUrl: string | n
   if (!student) throw new Error("Öğrenci bulunamadı.");
 
   const url =
-    photoUrl && photoUrl.startsWith("/uploads/") ? photoUrl.slice(0, 500) : null;
+    requireUploadUrl(photoUrl, "image");
 
   await prisma.student.update({
     where: { id: studentId },

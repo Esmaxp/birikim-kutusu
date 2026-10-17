@@ -1,4 +1,8 @@
 "use client";
+import { FeedbackForm } from "@/components/ui/feedback";
+
+import { ConfirmForm } from "@/components/ui/feedback";
+
 
 import Link from "next/link";
 import { useState } from "react";
@@ -8,7 +12,7 @@ import Avatar from "./Avatar";
 import { addBook, deleteBook, updateBookStatus } from "@/actions/books";
 import { addAbsence, deleteAbsence } from "@/actions/absences";
 import { addNote, deleteNote } from "@/actions/notes";
-import { KITAP_DURUMLARI, RED, RED_DARK, formatDate } from "@/lib/constants";
+import { KITAP_DURUMLARI, formatDate } from "@/lib/constants";
 
 export type PanelStudent = {
   id: string;
@@ -61,8 +65,7 @@ export default function TeacherStudentPanel({
     <button
       type="button"
       onClick={() => toggle(key)}
-      className="text-[10px] leading-tight text-white rounded-lg py-2 px-1"
-      style={{ background: openForm === key ? RED_DARK : RED }}
+      className={"text-[13px] leading-tight text-white rounded-lg py-2 px-1 " + (openForm === key ? "bg-birikim-dark" : "bg-birikim")}
     >
       {label}
     </button>
@@ -71,7 +74,7 @@ export default function TeacherStudentPanel({
   return (
     <div className="w-[300px] shrink-0 bg-white rounded-xl border border-slate-200 p-4 h-fit sticky top-4">
       <div className="flex justify-end">
-        <Link href={closeHref} className="text-slate-300 hover:text-red-500">
+        <Link href={closeHref} className="text-slate-600 hover:text-red-500">
           <X size={16} />
         </Link>
       </div>
@@ -79,7 +82,7 @@ export default function TeacherStudentPanel({
       <div className="flex flex-col items-center -mt-2">
         <Avatar name={student.name} size={64} />
         <div className="text-[14px] font-semibold mt-2">{student.name}</div>
-        <div className="text-[11px] text-slate-400">
+        <div className="text-[13px] text-slate-600">
           {student.sube} · No: {student.no}
         </div>
       </div>
@@ -99,21 +102,21 @@ export default function TeacherStudentPanel({
           className="mt-3 space-y-2 bg-slate-50 rounded-lg p-3"
         >
           <input type="hidden" name="studentId" value={student.id} />
-          <input
+          <input aria-label="Tarih"
             required
             type="date"
             name="date"
-            className="w-full text-[12px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
+            className="w-full text-[13px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
           />
-          <input
+          <input aria-label="Sebep"
             name="reason"
             placeholder="Sebep"
-            className="w-full text-[12px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
+            className="w-full text-[13px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
           />
           <button
             type="submit"
-            className="w-full text-[12px] text-white rounded-md py-1.5"
-            style={{ background: RED }}
+            className="w-full text-[13px] text-white rounded-md py-1.5 bg-birikim"
+
           >
             Kaydet
           </button>
@@ -129,26 +132,26 @@ export default function TeacherStudentPanel({
           className="mt-3 space-y-2 bg-slate-50 rounded-lg p-3"
         >
           <input type="hidden" name="studentId" value={student.id} />
-          <input
+          <input aria-label="Başlık (opsiyonel)"
             name="title"
             placeholder="Başlık (opsiyonel)"
-            className="w-full text-[12px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
+            className="w-full text-[13px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
           />
-          <textarea
+          <textarea aria-label="Not yazın..."
             required
             name="body"
             rows={3}
             placeholder="Not yazın..."
-            className="w-full text-[12px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none resize-none"
+            className="w-full text-[13px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none resize-none"
           />
-          <label className="flex items-center gap-1.5 text-[11px] text-slate-500">
-            <input type="checkbox" name="visibleToStudent" className="accent-[#c1272d]" />
+          <label className="flex items-center gap-1.5 text-[13px] text-slate-600">
+            <input type="checkbox" name="visibleToStudent" className="accent-birikim" />
             Öğrenci panelinde görünsün
           </label>
           <button
             type="submit"
-            className="w-full text-[12px] text-white rounded-md py-1.5"
-            style={{ background: RED }}
+            className="w-full text-[13px] text-white rounded-md py-1.5 bg-birikim"
+
           >
             Kaydet
           </button>
@@ -164,20 +167,20 @@ export default function TeacherStudentPanel({
           className="mt-3 space-y-2 bg-slate-50 rounded-lg p-3"
         >
           <input type="hidden" name="studentId" value={student.id} />
-          <input
+          <input aria-label="Kitap adı"
             required
             name="title"
             placeholder="Kitap adı"
-            className="w-full text-[12px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
+            className="w-full text-[13px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
           />
-          <input
+          <input aria-label="Yazar"
             name="author"
             placeholder="Yazar"
-            className="w-full text-[12px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
+            className="w-full text-[13px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
           />
-          <select
+          <select aria-label="Okuma durumu"
             name="status"
-            className="w-full text-[12px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
+            className="w-full text-[13px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none"
           >
             {KITAP_DURUMLARI.map((d) => (
               <option key={d}>{d}</option>
@@ -185,55 +188,55 @@ export default function TeacherStudentPanel({
           </select>
           <button
             type="submit"
-            className="w-full text-[12px] text-white rounded-md py-1.5"
-            style={{ background: RED }}
+            className="w-full text-[13px] text-white rounded-md py-1.5 bg-birikim"
+
           >
             Ekle
           </button>
         </form>
       )}
 
-      <div className="mt-4 space-y-1.5 text-[12px] text-slate-500">
+      <div className="mt-4 space-y-1.5 text-[13px] text-slate-600">
         <div>
-          <span className="text-slate-400">Şube:</span> {student.sube}
+          <span className="text-slate-600">Şube:</span> {student.sube}
         </div>
         <div>
-          <span className="text-slate-400">Veli:</span> {student.veliAdi ?? "-"}
+          <span className="text-slate-600">Veli:</span> {student.veliAdi ?? "-"}
         </div>
         <div>
-          <span className="text-slate-400">Telefon:</span> {student.telefon ?? "-"}
+          <span className="text-slate-600">Telefon:</span> {student.telefon ?? "-"}
         </div>
         <div>
-          <span className="text-slate-400">Adres:</span> {student.adres ?? "-"}
+          <span className="text-slate-600">Adres:</span> {student.adres ?? "-"}
         </div>
       </div>
 
       {notes.length > 0 && (
         <div className="mt-4">
-          <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 mb-1">
+          <div className="flex items-center gap-1 text-[13px] font-semibold text-slate-600 mb-1">
             <StickyNote size={12} /> Notlar
           </div>
           <div className="space-y-1 max-h-40 overflow-y-auto">
             {notes.map((n) => (
-              <div key={n.id} className="text-[11px] bg-slate-50 rounded-md px-2 py-1.5">
+              <div key={n.id} className="text-[13px] bg-slate-50 rounded-md px-2 py-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-slate-400">
+                  <span className="text-slate-600">
                     {n.authorTitle ?? "Öğretmen"} · {n.authorName}
                   </span>
                   {n.canDelete && (
-                    <form action={deleteNote.bind(null, n.id)}>
-                      <button className="text-slate-300 hover:text-red-500">
+                    <ConfirmForm action={deleteNote.bind(null, n.id)}>
+                      <button aria-label="Kaydı sil" className="text-slate-600 hover:text-red-500">
                         <X size={11} />
                       </button>
-                    </form>
+                    </ConfirmForm>
                   )}
                 </div>
                 {n.title && (
                   <div className="text-slate-600 font-medium">{n.title}</div>
                 )}
-                <div className="text-slate-500">{n.body}</div>
+                <div className="text-slate-600">{n.body}</div>
                 {n.visibleToStudent && (
-                  <div className="text-[10px] text-green-600 mt-0.5">
+                  <div className="text-[13px] text-green-600 mt-0.5">
                     Öğrenciye görünür
                   </div>
                 )}
@@ -245,23 +248,23 @@ export default function TeacherStudentPanel({
 
       {absences.length > 0 && (
         <div className="mt-3">
-          <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 mb-1">
+          <div className="flex items-center gap-1 text-[13px] font-semibold text-slate-600 mb-1">
             <CalendarX size={12} /> Devamsızlıklar ({absences.length})
           </div>
           <div className="space-y-1 max-h-28 overflow-y-auto">
             {absences.map((a) => (
               <div
                 key={a.id}
-                className="flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 rounded-md px-2 py-1"
+                className="flex items-center justify-between text-[13px] text-slate-600 bg-slate-50 rounded-md px-2 py-1"
               >
                 <span>
                   {formatDate(a.date)} · {a.reason}
                 </span>
-                <form action={deleteAbsence.bind(null, a.id)}>
-                  <button className="text-slate-300 hover:text-red-500">
+                <ConfirmForm action={deleteAbsence.bind(null, a.id)}>
+                  <button aria-label="Kaydı sil" className="text-slate-600 hover:text-red-500">
                     <X size={11} />
                   </button>
-                </form>
+                </ConfirmForm>
               </div>
             ))}
           </div>
@@ -270,36 +273,36 @@ export default function TeacherStudentPanel({
 
       {books.length > 0 && (
         <div className="mt-3">
-          <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 mb-1">
+          <div className="flex items-center gap-1 text-[13px] font-semibold text-slate-600 mb-1">
             <BookOpen size={12} /> Kitaplar ({books.length})
           </div>
           <div className="space-y-1 max-h-40 overflow-y-auto">
             {books.map((b) => (
               <div
                 key={b.id}
-                className="flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 rounded-md px-2 py-1 gap-1"
+                className="flex items-center justify-between text-[13px] text-slate-600 bg-slate-50 rounded-md px-2 py-1 gap-1"
               >
                 <span className="truncate" title={b.author ?? undefined}>
                   {b.title}
                 </span>
                 <div className="flex items-center gap-1 shrink-0">
-                  <form action={updateBookStatus.bind(null, b.id)}>
-                    <select
+                  <FeedbackForm action={updateBookStatus.bind(null, b.id)}>
+                    <select aria-label="Okuma durumu"
                       name="status"
                       defaultValue={b.status}
                       onChange={(e) => e.currentTarget.form?.requestSubmit()}
-                      className="text-[10px] border border-slate-200 rounded px-1 py-0.5 bg-white"
+                      className="text-[13px] border border-slate-200 rounded px-1 py-0.5 bg-white"
                     >
                       {KITAP_DURUMLARI.map((d) => (
                         <option key={d}>{d}</option>
                       ))}
                     </select>
-                  </form>
-                  <form action={deleteBook.bind(null, b.id)}>
-                    <button className="text-slate-300 hover:text-red-500">
+                  </FeedbackForm>
+                  <ConfirmForm action={deleteBook.bind(null, b.id)}>
+                    <button aria-label="Kaydı sil" className="text-slate-600 hover:text-red-500">
                       <X size={11} />
                     </button>
-                  </form>
+                  </ConfirmForm>
                 </div>
               </div>
             ))}

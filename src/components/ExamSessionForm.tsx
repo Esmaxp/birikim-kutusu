@@ -1,4 +1,6 @@
 "use client";
+import { ConfirmButton } from "./ui/feedback";
+import { toast } from "sonner";
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
@@ -16,7 +18,7 @@ import {
 import Avatar from "./Avatar";
 import { saveExamSession, confirmExamSession } from "@/actions/exam-session";
 import type { ExamSessionInput } from "@/lib/exam-session";
-import { HATA_TURLERI, RED, SINAV_DERSLERI, formatDateTime } from "@/lib/constants";
+import { HATA_TURLERI, SINAV_DERSLERI, formatDateTime } from "@/lib/constants";
 import { netHesapla } from "@/lib/exam";
 
 let counter = 0;
@@ -62,7 +64,7 @@ function SectionCard({
     <div className={`bg-white rounded-xl border p-4 ${color.border}`}>
       <div className="flex items-center gap-2 mb-4">
         <span
-          className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[12px] font-bold shrink-0 ${color.badge}`}
+          className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[13px] font-bold shrink-0 ${color.badge}`}
         >
           {no}
         </span>
@@ -74,8 +76,8 @@ function SectionCard({
 }
 
 const inputCls =
-  "text-[12px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-slate-300 w-full";
-const labelCls = "text-[11px] text-slate-500 mb-1 block";
+  "text-[13px] border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-slate-300 w-full";
+const labelCls = "text-[13px] text-slate-600 mb-1 block";
 
 export default function ExamSessionForm({
   studentId,
@@ -238,6 +240,7 @@ export default function ExamSessionForm({
         const res = await saveExamSession(studentId, currentExamId, payload);
         setDirty(false);
         setMesaj("Kaydedildi ✓");
+        toast.success("Kaydedildi.");
         setTimeout(() => setMesaj(""), 2500);
 
         if (!currentExamId) {
@@ -249,6 +252,7 @@ export default function ExamSessionForm({
           window.history.replaceState(null, "", newUrl + window.location.search);
         }
       } catch (e) {
+        toast.error(e instanceof Error ? e.message : "İşlem tamamlanamadı.");
         setHata(e instanceof Error ? e.message : "Kaydedilemedi.");
       }
     });
@@ -262,6 +266,7 @@ export default function ExamSessionForm({
         await confirmExamSession(currentExamId, "REHBER");
         setRehberOnay(new Date().toISOString());
       } catch (e) {
+        toast.error(e instanceof Error ? e.message : "İşlem tamamlanamadı.");
         setHata(e instanceof Error ? e.message : "Onaylanamadı.");
       }
     });
@@ -271,7 +276,7 @@ export default function ExamSessionForm({
     <div className="space-y-5">
       <Link
         href={`/ogretmen/ogrenci/${studentId}?tab=deneme`}
-        className="flex items-center gap-1 text-[12px] text-slate-500 hover:text-slate-700 w-fit"
+        className="flex items-center gap-1 text-[13px] text-slate-600 hover:text-slate-700 w-fit"
       >
         <ArrowLeft size={13} /> Öğrenci deneme listesine dön
       </Link>
@@ -281,14 +286,14 @@ export default function ExamSessionForm({
           <Avatar name={student.name} size={36} photoUrl={student.photoUrl} />
           <div>
             <div className="text-[13px] font-semibold">{student.name}</div>
-            <div className="text-[11px] text-slate-400">
+            <div className="text-[13px] text-slate-600">
               {student.sube} · No: {student.no}
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {hata && <span className="text-[12px] text-red-600">{hata}</span>}
-          {mesaj && <span className="text-[12px] text-green-600 font-medium">{mesaj}</span>}
+          {hata && <span className="text-[13px] text-red-600">{hata}</span>}
+          {mesaj && <span className="text-[13px] text-green-600 font-medium">{mesaj}</span>}
           {currentExamId && (
             <Link
               href={`/ogretmen/ogrenci/${studentId}/deneme/${currentExamId}/yazdir`}
@@ -302,8 +307,8 @@ export default function ExamSessionForm({
             type="button"
             onClick={handleSave}
             disabled={pending}
-            className="flex items-center gap-1.5 text-white text-[13px] font-medium px-4 py-2 rounded-lg hover:opacity-90 disabled:opacity-60"
-            style={{ background: RED }}
+            className="flex items-center gap-1.5 text-white text-[13px] font-medium px-4 py-2 rounded-lg hover:opacity-90 disabled:opacity-60 bg-birikim"
+
           >
             <Save size={14} /> {pending ? "Kaydediliyor..." : "Kaydet"}
           </button>
@@ -315,7 +320,7 @@ export default function ExamSessionForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div className="lg:col-span-2">
             <label className={labelCls}>Sınav Adı *</label>
-            <input
+            <input aria-label="örn. Nisan Ayı Genel Deneme"
               required
               value={form.sinavAdi}
               onChange={(e) => setForm((f) => ({ ...f, sinavAdi: e.target.value }))}
@@ -384,9 +389,9 @@ export default function ExamSessionForm({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-[12px]">
+          <table className="w-full text-[13px]">
             <thead>
-              <tr className="text-left text-slate-400">
+              <tr className="text-left text-slate-600">
                 <th className="pb-1.5 font-medium">Ders</th>
                 <th className="pb-1.5 font-medium w-32">Çözüm Süresi (dk)</th>
                 <th className="pb-1.5 font-medium w-32">Çözüm Sırası</th>
@@ -432,13 +437,13 @@ export default function ExamSessionForm({
         {(sureUyarisi || siraTekrar) && (
           <div className="mt-3 space-y-1">
             {sureUyarisi && (
-              <div className="flex items-center gap-1.5 text-[11px] text-amber-700 bg-amber-50 rounded-md px-2 py-1.5">
+              <div className="flex items-center gap-1.5 text-[13px] text-amber-700 bg-amber-50 rounded-md px-2 py-1.5">
                 <AlertTriangle size={12} /> Ders sürelerinin toplamı ({sureToplami} dk),
                 belirtilen toplam çözüm süresini ({toplamSuresiSayi} dk) aşıyor.
               </div>
             )}
             {siraTekrar && (
-              <div className="flex items-center gap-1.5 text-[11px] text-amber-700 bg-amber-50 rounded-md px-2 py-1.5">
+              <div className="flex items-center gap-1.5 text-[13px] text-amber-700 bg-amber-50 rounded-md px-2 py-1.5">
                 <AlertTriangle size={12} /> Çözüm sırası birden fazla derste tekrar ediyor.
               </div>
             )}
@@ -450,17 +455,17 @@ export default function ExamSessionForm({
       <SectionCard no={3} title="Sınav Süreci Değerlendirmesi">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="border border-slate-200 rounded-lg p-3">
-            <div className="text-[12px] font-medium text-slate-600 mb-2">
+            <div className="text-[13px] font-medium text-slate-600 mb-2">
               İçsel (Ruhsal) Problem Yaşandı mı?
             </div>
-            <div className="flex gap-3 text-[12px] mb-2">
+            <div className="flex gap-3 text-[13px] mb-2">
               <label className="flex items-center gap-1.5">
                 <input
                   type="radio"
                   name="icselProblem"
                   checked={!form.icselProblem}
                   onChange={() => setIcsel(false)}
-                  className="accent-[#c1272d]"
+                  className="accent-birikim"
                 />
                 Hayır
               </label>
@@ -470,13 +475,13 @@ export default function ExamSessionForm({
                   name="icselProblem"
                   checked={form.icselProblem}
                   onChange={() => setIcsel(true)}
-                  className="accent-[#c1272d]"
+                  className="accent-birikim"
                 />
                 Evet
               </label>
             </div>
             {form.icselProblem && (
-              <textarea
+              <textarea aria-label="Açıklama"
                 rows={3}
                 value={form.icselAciklama}
                 onChange={(e) => setForm((f) => ({ ...f, icselAciklama: e.target.value }))}
@@ -487,17 +492,17 @@ export default function ExamSessionForm({
           </div>
 
           <div className="border border-slate-200 rounded-lg p-3">
-            <div className="text-[12px] font-medium text-slate-600 mb-2">
+            <div className="text-[13px] font-medium text-slate-600 mb-2">
               Dışsal Problem Yaşandı mı?
             </div>
-            <div className="flex gap-3 text-[12px] mb-2">
+            <div className="flex gap-3 text-[13px] mb-2">
               <label className="flex items-center gap-1.5">
                 <input
                   type="radio"
                   name="dissalProblem"
                   checked={!form.dissalProblem}
                   onChange={() => setDissal(false)}
-                  className="accent-[#c1272d]"
+                  className="accent-birikim"
                 />
                 Hayır
               </label>
@@ -507,13 +512,13 @@ export default function ExamSessionForm({
                   name="dissalProblem"
                   checked={form.dissalProblem}
                   onChange={() => setDissal(true)}
-                  className="accent-[#c1272d]"
+                  className="accent-birikim"
                 />
                 Evet
               </label>
             </div>
             {form.dissalProblem && (
-              <textarea
+              <textarea aria-label="Açıklama"
                 rows={3}
                 value={form.dissalAciklama}
                 onChange={(e) => setForm((f) => ({ ...f, dissalAciklama: e.target.value }))}
@@ -524,17 +529,17 @@ export default function ExamSessionForm({
           </div>
 
           <div className="border border-slate-200 rounded-lg p-3">
-            <div className="text-[12px] font-medium text-slate-600 mb-2">
+            <div className="text-[13px] font-medium text-slate-600 mb-2">
               Sınav Esnasında Hata Yapıldı mı?
             </div>
-            <div className="flex gap-3 text-[12px] mb-2">
+            <div className="flex gap-3 text-[13px] mb-2">
               <label className="flex items-center gap-1.5">
                 <input
                   type="radio"
                   name="hataYapildi"
                   checked={!form.hataYapildi}
                   onChange={() => setHataYapildi(false)}
-                  className="accent-[#c1272d]"
+                  className="accent-birikim"
                 />
                 Hayır
               </label>
@@ -544,7 +549,7 @@ export default function ExamSessionForm({
                   name="hataYapildi"
                   checked={form.hataYapildi}
                   onChange={() => setHataYapildi(true)}
-                  className="accent-[#c1272d]"
+                  className="accent-birikim"
                 />
                 Evet
               </label>
@@ -553,19 +558,19 @@ export default function ExamSessionForm({
               <div className="space-y-1.5">
                 <div className="grid grid-cols-2 gap-1">
                   {HATA_TURLERI.map((h) => (
-                    <label key={h.key} className="flex items-center gap-1.5 text-[11px]">
+                    <label key={h.key} className="flex items-center gap-1.5 text-[13px]">
                       <input
                         type="checkbox"
                         checked={form.hataTurleri.includes(h.key)}
                         onChange={() => toggleHataTuru(h.key)}
-                        className="accent-[#c1272d]"
+                        className="accent-birikim"
                       />
                       {h.label}
                     </label>
                   ))}
                 </div>
                 {form.hataTurleri.includes("DIGER") && (
-                  <input
+                  <input aria-label="Diğer hata açıklaması"
                     value={form.hataDigerAciklama}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, hataDigerAciklama: e.target.value }))
@@ -585,9 +590,9 @@ export default function ExamSessionForm({
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-5">
           <div>
             <div className="overflow-x-auto">
-              <table className="w-full text-[12px]">
+              <table className="w-full text-[13px]">
                 <thead>
-                  <tr className="text-left text-slate-400">
+                  <tr className="text-left text-slate-600">
                     <th className="pb-1.5 font-medium">Ders</th>
                     <th className="pb-1.5 font-medium w-16">Doğru</th>
                     <th className="pb-1.5 font-medium w-16">Yanlış</th>
@@ -648,7 +653,7 @@ export default function ExamSessionForm({
 
             <div className="grid grid-cols-3 gap-2 mt-4">
               <div className="bg-slate-50 rounded-lg p-2 text-center">
-                <div className="text-[10px] text-slate-400 mb-1">Toplam Net</div>
+                <div className="text-[13px] text-slate-600 mb-1">Toplam Net</div>
                 <div className="text-[14px] font-bold text-slate-700">{toplamNetCanli}</div>
               </div>
               {(
@@ -661,7 +666,7 @@ export default function ExamSessionForm({
                 ] as const
               ).map((box) => (
                 <div key={box.label} className="bg-slate-50 rounded-lg p-2 text-center">
-                  <div className="text-[10px] text-slate-400 mb-1">{box.label}</div>
+                  <div className="text-[13px] text-slate-600 mb-1">{box.label}</div>
                   <input
                     type="number"
                     value={form[box.field]}
@@ -674,41 +679,41 @@ export default function ExamSessionForm({
           </div>
 
           <div>
-            <div className="text-[12px] font-medium text-slate-600 mb-2">
+            <div className="text-[13px] font-medium text-slate-600 mb-2">
               Kaçırılan (Çalışılacak) Kazanımlar
             </div>
             <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
               {SINAV_DERSLERI.map((ders) => (
                 <div key={ders} className="border border-slate-200 rounded-lg p-2.5">
-                  <div className="flex items-center gap-1.5 text-[12px] font-medium text-slate-600 mb-1.5">
-                    <Target size={12} style={{ color: RED }} /> {ders}
+                  <div className="flex items-center gap-1.5 text-[13px] font-medium text-slate-600 mb-1.5">
+                    <Target size={12}  className="text-birikim" /> {ders}
                   </div>
                   <div className="space-y-1">
                     {gains
                       .filter((g) => g.ders === ders)
                       .map((g) => (
                         <div key={g.id} className="flex items-center gap-1.5">
-                          <input
+                          <input aria-label="Kazanım..."
                             value={g.metin}
                             onChange={(e) => changeGain(g.id, e.target.value)}
                             placeholder="Kazanım..."
                             className={inputCls}
                           />
-                          <button
+                          <ConfirmButton
                             type="button"
-                            onClick={() => removeGain(g.id)}
-                            className="text-slate-300 hover:text-red-500 shrink-0"
-                          >
+                            onConfirm={() => removeGain(g.id)}
+                            className="text-slate-600 hover:text-red-500 shrink-0"
+                           aria-label="Satırı sil">
                             <X size={13} />
-                          </button>
+                          </ConfirmButton>
                         </div>
                       ))}
                   </div>
                   <button
                     type="button"
                     onClick={() => addGain(ders)}
-                    className="flex items-center gap-1 text-[11px] mt-1.5"
-                    style={{ color: RED }}
+                    className="flex items-center gap-1 text-[13px] mt-1.5 text-birikim"
+
                   >
                     <Plus size={11} /> Satır ekle
                   </button>
@@ -751,25 +756,25 @@ export default function ExamSessionForm({
       <SectionCard no={6} title="İmzalar">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="border border-slate-200 rounded-lg p-3">
-            <div className="text-[12px] font-medium text-slate-600 mb-2">Öğrenci Onayı</div>
+            <div className="text-[13px] font-medium text-slate-600 mb-2">Öğrenci Onayı</div>
             {ogrenciOnay ? (
-              <div className="flex items-center gap-1.5 text-[12px] text-green-600">
+              <div className="flex items-center gap-1.5 text-[13px] text-green-600">
                 <CheckCircle2 size={14} /> {confirm?.ogrenciAdi ?? student.name} ·{" "}
                 {formatDateTime(ogrenciOnay)}
               </div>
             ) : (
-              <div className="text-[11px] text-slate-400">
+              <div className="text-[13px] text-slate-600">
                 Öğrenci henüz onaylamadı — kendi panelinden onaylayacak.
               </div>
             )}
           </div>
 
           <div className="border border-slate-200 rounded-lg p-3">
-            <div className="text-[12px] font-medium text-slate-600 mb-2">
+            <div className="text-[13px] font-medium text-slate-600 mb-2">
               Rehber Öğretmen Onayı
             </div>
             {rehberOnay ? (
-              <div className="flex items-center gap-1.5 text-[12px] text-green-600">
+              <div className="flex items-center gap-1.5 text-[13px] text-green-600">
                 <CheckCircle2 size={14} /> {confirm?.rehberAdi ?? "Rehber Öğretmen"} ·{" "}
                 {formatDateTime(rehberOnay)}
               </div>
@@ -778,13 +783,13 @@ export default function ExamSessionForm({
                 type="button"
                 onClick={handleRehberOnay}
                 disabled={confirmPending}
-                className="text-white text-[12px] font-medium px-3 py-1.5 rounded-lg disabled:opacity-60"
-                style={{ background: RED }}
+                className="text-white text-[13px] font-medium px-3 py-1.5 rounded-lg disabled:opacity-60 bg-birikim"
+
               >
                 {confirmPending ? "Onaylanıyor..." : "Onayla"}
               </button>
             ) : (
-              <div className="text-[11px] text-slate-400">
+              <div className="text-[13px] text-slate-600">
                 Onaylamadan önce kaydı bir kez kaydedin.
               </div>
             )}

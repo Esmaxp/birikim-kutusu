@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/auth";
-import { ROLE_HOME, RED } from "@/lib/constants";
+import { ROLE_HOME } from "@/lib/constants";
 import { AUTH_ROLES, roleBySlug } from "@/lib/auth-roles";
 import AuthShell from "@/components/AuthShell";
 import LoginForm from "../LoginForm";
@@ -36,16 +36,14 @@ export default async function RoleLoginPage({
     <AuthShell
       footer={
         <div
-          className="flex items-center justify-center gap-4 text-[12px]"
-          style={{ color: RED }}
+          className="flex flex-wrap items-center justify-center gap-4 text-[13px] text-birikim"
+
         >
-          <button type="button" className="hover:underline">
-            Şifremi Unuttum?
-          </button>
-          <span className="text-slate-300">|</span>
-          <Link href={`/kayit/${role.slug}`} className="hover:underline">
+          <span className="text-slate-600">Şifre desteği için okul yönetimine başvurun.</span>
+          {role.registerEnabled && <span className="text-slate-600">|</span>}
+          {role.registerEnabled && <Link href={`/kayit/${role.slug}`} className="hover:underline">
             Kayıt Ol
-          </Link>
+          </Link>}
         </div>
       }
     >

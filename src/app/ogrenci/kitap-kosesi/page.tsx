@@ -22,7 +22,7 @@ export default async function KitapKosesiPage() {
     <div className="max-w-5xl mx-auto p-6">
       <div className="mb-5">
         <div className="text-[18px] font-bold text-slate-800">Kitap Köşem</div>
-        <p className="text-[12px] text-slate-400">
+        <p className="text-[13px] text-slate-600">
           Okuduğun kitapları yükle, beğendiğin sözleri kaydet.
         </p>
       </div>

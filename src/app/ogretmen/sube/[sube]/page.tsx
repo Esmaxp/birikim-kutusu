@@ -16,7 +16,7 @@ export default async function SubePage({ params }: Props) {
 
   const schoolClass = await prisma.schoolClass.findUnique({
     where: { name: subeAdi },
-    include: { students: { orderBy: { no: "asc" } } },
+    include: { students: { orderBy: { no: "asc" }, include: { _count: { select: { absences: true } }, examSessions: { take: 2, orderBy: { sinavTarihi: "desc" }, select: { toplamNet: true } } } } },
   });
   if (!schoolClass) notFound();
 
@@ -25,13 +25,13 @@ export default async function SubePage({ params }: Props) {
       <div className="text-[15px] font-semibold text-slate-700 mb-4">
         {subeAdi} Şubesi Öğrenci Listesi
       </div>
-      <p className="text-[12px] text-slate-400 mb-3">
+      <p className="text-[13px] text-slate-600 mb-3">
         Devamsızlık, deneme analizi, rehberlik ve kitap köşesi kayıtları için
         bir öğrenci seçin.
       </p>
 
       <StudentGrid
-        students={schoolClass.students}
+        students={schoolClass.students.map((s) => ({ ...s, sinif: subeAdi, absenceCount: s._count.absences, latestNet: s.examSessions[0]?.toplamNet, netDelta: s.examSessions[0]?.toplamNet != null && s.examSessions[1]?.toplamNet != null ? s.examSessions[0].toplamNet - s.examSessions[1].toplamNet : null }))}
         hrefFor={(id) => `/ogretmen/ogrenci/${id}`}
       />
     </div>

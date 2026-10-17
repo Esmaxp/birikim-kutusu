@@ -13,6 +13,7 @@ export interface RateLimiter {
 
 type WindowEntry = {
   timestamps: number[];
+  windowMs: number;
 };
 
 /**
@@ -21,6 +22,18 @@ type WindowEntry = {
  */
 export class InMemoryRateLimiter implements RateLimiter {
   private readonly store = new Map<string, WindowEntry>();
+  private readonly maxKeys = 50000;
+  constructor() {
+    const timer = setInterval(() => this.cleanup(), 60000);
+    timer.unref();
+  }
+  private cleanup() {
+    const now = Date.now();
+    for (const [key, entry] of this.store) {
+      entry.timestamps = entry.timestamps.filter((t) => t > now - entry.windowMs);
+      if (!entry.timestamps.length) this.store.delete(key);
+    }
+  }
 
   async check(
     key: string,
@@ -31,9 +44,12 @@ export class InMemoryRateLimiter implements RateLimiter {
     const cutoff = now - windowMs;
     let entry = this.store.get(key);
     if (!entry) {
-      entry = { timestamps: [] };
+      if (this.store.size >= this.maxKeys) this.cleanup();
+      if (this.store.size >= this.maxKeys) return { allowed: false, remaining: 0, retryAfterSec: 60 };
+      entry = { timestamps: [], windowMs };
       this.store.set(key, entry);
     }
+    entry.windowMs = Math.max(entry.windowMs, windowMs);
 
     entry.timestamps = entry.timestamps.filter((t) => t > cutoff);
 
@@ -63,9 +79,7 @@ const globalForLimiter = globalThis as unknown as {
 export const rateLimiter: RateLimiter =
   globalForLimiter.rateLimiter ?? new InMemoryRateLimiter();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForLimiter.rateLimiter = rateLimiter;
-}
+globalForLimiter.rateLimiter = rateLimiter;
 
 /**
  * Geliştirmede sınırlar bol tutulur; deneme yaparken kilitlenmemek için.
@@ -73,7 +87,8 @@ if (process.env.NODE_ENV !== "production") {
  */
 const IS_PROD = process.env.NODE_ENV === "production";
 
-export const LOGIN_LIMIT = IS_PROD ? 5 : 100;
+export const LOGIN_LIMIT = IS_PROD ? 10 : 100;
+export const LOGIN_IP_LIMIT = IS_PROD ? 30 : 300;
 export const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 dk
 // Aynı evden/okuldan anne-baba arka arkaya kayıt olabilir; sınır buna göre.
 export const REGISTER_LIMIT = IS_PROD ? 10 : 100;

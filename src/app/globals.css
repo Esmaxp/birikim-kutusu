@@ -50,3 +50,19 @@ body {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+@media screen {
+  body { background: #f6f7f9; font-family: var(--font-sans), system-ui, sans-serif; font-size: 15px; line-height: 1.6; }
+  ::selection { background: #ffe0e1; color: #6e1e23; }
+  :where(a,button,input,select,textarea,[tabindex]):focus-visible { outline: 2px solid #c1272d !important; outline-offset: 3px; }
+  :where(button,a,input,select,textarea) { transition: background-color 150ms, border-color 150ms, box-shadow 150ms; }
+  :where(button,input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select) { min-height: 40px; }
+  :where(button):not(:disabled) { cursor: pointer; }
+  :where(button):not(:disabled):hover { filter: brightness(.97); }
+  :where(button):disabled { cursor: not-allowed; opacity: .6; }
+  :where(input,select,textarea) { max-width: 100%; }
+  main { min-width: 0; }
+  @media (max-width: 639px) { main > div.p-6 { padding: 1rem; } }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
