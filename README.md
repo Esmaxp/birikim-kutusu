@@ -19,7 +19,9 @@ Sonradan veritabanını sıfırlamak için: `npm run db:reset`
 
 ## Demo hesaplar
 
-Geliştirmede varsayılan şifre: **birikim123** (`SEED_PASSWORD` ile değiştirilebilir).
+Parola varsayılan sabit bir değerden alınmaz. `SEED_PASSWORD` tanımlı değilse yerel seed, demo hesapları için güçlü rastgele bir geçici parola oluşturur ve yalnızca o komutun sonunda terminalde gösterir. `.env` içinde kendi parolanızı belirleyebilirsiniz; en az 12 karakter kullanın.
+
+Bu hesaplar yalnızca yerel geliştirme içindir. Seed verisini ve ortak parolaları internete açık ortama taşımayın. Daha önce kullanılmış parolalar kaynak koddan değiştirilmez; ilgili kullanıcı hesaplarında döndürülmelidir.
 Seed öğretmen hesabı yöneticidir; mevcut veritabanları için aşağıdaki `admin:create`
 adımını kullanın. Mevcut verileri korumak için `setup`/seed komutlarını tekrar çalıştırmayın.
 
@@ -184,7 +186,7 @@ src/components/          Ortak arayüz bileşenleri (AuthShell, AppShell vb.)
   bir depolama kullanın. Geliştirme sınırları daha yüksektir.
 - `setup` ve `db:seed`, `NODE_ENV=production` veya `DATABASE_URL` değeri `file:`
   ile başlamıyorsa veritabanına dokunmadan durur. Bilinçli istisna için
-  `ALLOW_SEED=true` ve açıkça belirlenmiş `SEED_PASSWORD` gerekir.
+  `ALLOW_SEED=true` ve en az 12 karakterli, ortama özel bir `SEED_PASSWORD` gerekir.
   `db:reset` üretim benzeri ortamda hiçbir istisnayla çalışmaz.
 - Mevcut veritabanına `npx prisma db push` uygulayın; eski şube/numara tekrarlarını
   önce düzeltin. Ardından `npm run admin:create -- --email ... --name "..."` ile
@@ -192,9 +194,8 @@ src/components/          Ortak arayüz bileşenleri (AuthShell, AppShell vb.)
 - Eski yükleme adreslerini önce `npm run uploads:sanitize` ile inceleyin.
   Yalnızca `npm run uploads:sanitize -- --apply` geçersiz alanları temizler.
   Harici adresler, SVG, dizin geçişi ve yanlış dosya türleri reddedilir.
-- Dağıtım kontrolünde `npm run check:demo`, varsayılan demo şifresini kullanan
-  hesap varsa kod 1 döndürür. `npm test`, `npx tsc --noEmit`, `npm run lint` ve
-  `npm run build` kontrollerini çalıştırın.
+- Dağıtım denetimi: `SEED_PASSWORD=<güvenli parola> npm run check:demo`, bu parolayı kullanan hesap varsa kod 1 döndürür. Parolayı CI çıktısına yazdırmayın.
+  Run `npm test`, `npx tsc --noEmit`, `npm run lint`, and `npm run build`.
 
 - `DATABASE_URL` değerini PostgreSQL/MySQL'e çevirip `provider` alanını
   güncelleyin, ardından `prisma migrate deploy` kullanın.

@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { loadLocalEnv, assertDevOnly, isProductionLike } from "../scripts/guard-dev-only.mjs";
 import { generateInviteCode, hashInviteCode, INVITE_EXPIRY_DAYS } from "../src/lib/invite";
 import { PrismaClient } from "@prisma/client";
@@ -28,8 +29,9 @@ const NAME_POOL = [
   "Nil Aktaş",
 ];
 
-const DEFAULT_PASSWORD = process.env.SEED_PASSWORD || "birikim123";
-if (DEFAULT_PASSWORD.length < 8 || Buffer.byteLength(DEFAULT_PASSWORD) > 72) throw new Error("SEED_PASSWORD must be 8+ characters and at most 72 bytes.");
+const generatedSeedPassword = !process.env.SEED_PASSWORD;
+const seedPassword = process.env.SEED_PASSWORD || randomBytes(24).toString("base64url");
+if (seedPassword.length < 12 || Buffer.byteLength(seedPassword) > 72) throw new Error("SEED_PASSWORD must be 12+ characters and at most 72 bytes.");
 
 /** "Elif Kaya" -> "elif.kaya" (Türkçe karakterler sadeleştirilir) */
 function slugify(name: string) {
@@ -72,7 +74,7 @@ async function main() {
   await prisma.schoolClass.deleteMany();
   await prisma.user.deleteMany();
 
-  const pw = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  const pw = await bcrypt.hash(seedPassword, 10);
 
   console.log("→ Personel hesapları oluşturuluyor...");
   const teacher = await prisma.user.create({
@@ -421,7 +423,9 @@ async function main() {
   }
 
   console.log("\n✓ Seed tamamlandı.\n");
-  console.log("Demo hesaplar oluşturuldu. Şifre SEED_PASSWORD ile belirlenir (geliştirme varsayılanı README içinde). ");
+  console.log("Demo hesaplar oluşturuldu.");
+  if (generatedSeedPassword) console.log(`Geçici seed parolası (yalnızca bu işlemde gösterilir): ${seedPassword}`);
+  else console.log("Seed parolası SEED_PASSWORD ortam değişkeninden alındı; güvenlik için terminale yazdırılmadı.");
   console.log("  Öğretmen : ogretmen@birikim.k12.tr");
   console.log("  Rehber   : pdr@birikim.k12.tr (öğretmen girişi)");
   console.log("  Öğrenci  : elif.kaya@ogrenci.birikim.k12.tr");

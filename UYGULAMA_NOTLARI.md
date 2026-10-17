@@ -19,8 +19,9 @@ değişikliği korundu. İsteğe bağlı Upload tablosu eklenmedi; isteğe bağl
 - `TRUST_PROXY`: `none` (varsayılan), `hops:N` veya `cloudflare`.
 - `ALLOW_SEED`: üretim benzeri ortamda seed/setup için bilinçli istisna;
   reset için hiçbir istisna yoktur.
-- `SEED_PASSWORD`: geliştirmede varsayılan `birikim123`; üretim benzeri seed
-  sırasında açıkça belirlenmesi gerekir.
+- `SEED_PASSWORD`: tanımlı değilse yerel seed için rastgele, geçici parola
+  oluşturulur ve yalnızca seed komutunun sonunda gösterilir. Üretimde
+  en az 12 karakterli, ortama özel bir parola açıkça belirlenmelidir.
 - `ADMIN_PASSWORD`: ilk yönetici komutunda isteğe bağlı; normal kullanımda
   terminalde gizli şifre sorulur.
 
@@ -64,13 +65,6 @@ kipinde origin yalnızca Cloudflare ağlarından trafik kabul etmelidir.
 - HTTP kontrolü: öğretmen giriş sayfası 200, öğretmen kayıt sayfası 404;
   girişsiz yönetim ve şifre değiştirme sayfaları `/login` adresine yönlendiriliyor.
 - Uygulama `http://localhost:3000` adresinde yeniden başlatıldı.
-
-## Commit durumu
-
-Git kullanıcı adı/e-postası tanımlı olmadığı için ilk commit oluşturulamadı.
-Kimlik bilgileri kullanıcıya soruldu. İlk görevin değişiklikleri stage alanında;
-sonraki görevler çalışma dizininde duruyor. Kullanıcının `promt.md` değişikliği
-stage edilmedi. Görev başına commit işlemleri bu bilgiler gelince tamamlanabilir.
 
 ## Değişen ve eklenen dosyalar
 
