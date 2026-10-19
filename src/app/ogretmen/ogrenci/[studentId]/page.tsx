@@ -1,4 +1,6 @@
 import { Tabs } from "@/components/ui";
+import TeacherChat from "@/components/TeacherChat";
+import { getUnreadCounts } from "@/actions/messages";
 
 import { notFound } from "next/navigation";
 import { BookOpen, CalendarX, HeartHandshake, LayoutDashboard, Phone, Users } from "lucide-react";
@@ -14,7 +16,7 @@ import ExamSessionList from "@/components/ExamSessionList";
 
 type Props = {
   params: Promise<{ studentId: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; veli?: string }>;
 };
 
 const TABS = [
@@ -22,6 +24,8 @@ const TABS = [
   { key: "deneme", label: "Deneme Analizi", icon: LayoutDashboard },
   { key: "rehberlik", label: "Rehberlik", icon: HeartHandshake },
   { key: "kitap", label: "Kitap Köşesi", icon: BookOpen },
+  { key: "ogrenci-mesaj", label: "Ö-Ö-İ", icon: Users },
+  { key: "veli-mesaj", label: "Ö-V-İ", icon: Users },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
@@ -40,6 +44,8 @@ export default async function OgrenciDetayPage({ params, searchParams }: Props) 
   if (!student) notFound();
 
   const base = `/ogretmen/ogrenci/${studentId}`;
+  const unread = await getUnreadCounts();
+  const countFor = (kind: string) => unread.conversations.filter((c) => c.studentId === studentId && c.kind === kind).reduce((sum, c) => sum + c.unread, 0);
 
   const [absences, examSessions, notes, books, quotes] = await Promise.all([
     tab === "devam"
@@ -109,7 +115,10 @@ export default async function OgrenciDetayPage({ params, searchParams }: Props) 
         </div>
       </div>
 
-      <Tabs items={TABS.map(({ key, label }) => ({ label, href: `${base}?tab=${key}`, active: tab === key, count: ({ devam: student._count.absences, deneme: student._count.examSessions, rehberlik: student._count.notes, kitap: student._count.books })[key] }))} />
+      <Tabs items={TABS.map(({ key, label }) => ({ label, href: `${base}?tab=${key}`, active: tab === key, count: ({ devam: student._count.absences, deneme: student._count.examSessions, rehberlik: student._count.notes, kitap: student._count.books, "ogrenci-mesaj": countFor("OGRENCI") || undefined, "veli-mesaj": countFor("VELI") || undefined })[key] }))} />
+
+      {tab === "ogrenci-mesaj" && <TeacherChat studentId={studentId} kind="OGRENCI" />}
+      {tab === "veli-mesaj" && <TeacherChat studentId={studentId} kind="VELI" parentId={sp.veli} />}
 
       {tab === "devam" && (
         <DevamTab

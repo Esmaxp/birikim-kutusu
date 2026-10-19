@@ -117,6 +117,49 @@ server action içinde `assertCanAccessStudent` ile kayıt sahipliği kontrolü.
 
 ## Öğretmen paneli
 
+Öğretmen menüsü yalnızca **Kontrol Paneli**, **Öğrenci Yönetimi** ve **Davet Kodları**
+bağlantılarını gösterir. Yönetici hesaplarında ayrıca ayrı **Yönetim** bağlantısı vardır.
+Mobil menü de aynıdır. Rehberlik ve not sayfaları doğrudan adresleriyle kullanılabilir.
+Kontrol panelinde doğal sırada şube adlarını gösteren kartlar bulunur; kartlar mevcut
+`/ogretmen/sube/[sube]` listesine açılır. İstatistikler ve alt kısayollar kaldırılmıştır.
+Öğrenci aramasının klavye kısayolu çalışır; görünür kısayol ipucu kaldırılmıştır.
+
+### Mesajlaşma
+
+Üst çubuktaki **Bildirimler** zili tüm panellerde okunmamış mesaj sayısını ve
+görüşme bağlantılarını gösterir. Uygulama açıkken dört saniyede bir güncellenir;
+yeni mesajda uygulama içi bildirim çıkar. Bildirime dokununca doğru öğrenci/veli
+görüşmesi açılır. Sohbet okununca zil ve gezinme rozetleri güncellenir.
+Bu bildirimler uygulama içindir; tarayıcı kapalıyken işletim sistemi bildirimi gönderilmez.
+Gönderim, `crypto.randomUUID` desteği olmayan tarayıcılarda da çalışır. Oturum veya
+erişim sorunu sohbet içinde açıklanır; bağlantı hatasında **Yeniden bağlan** kullanılabilir.
+
+- Öğretmen, `/ogretmen/ogrenci/[studentId]?tab=ogrenci-mesaj` (**Ö-Ö-İ**) ve
+  `?tab=veli-mesaj` (**Ö-V-İ**) sekmelerinden öğrenci veya bağlı velilerle görüşür.
+  Veli seçiminde Anne, Baba ve Diğer veli etiketleri ile ayrı okunmamış sayıları gösterilir.
+- Öğrenci `/ogrenci/mesajlar`, veli `/veli/mesajlar` sayfasından etkin öğretmen seçer.
+  Birden fazla çocuğu olan veli önce çocuğunu seçebilir. Şemada şube–öğretmen bağı
+  olmadığından tüm etkin öğretmenler listelenir. Menü ve görüşmelerde okunmamış rozetleri vardır.
+- Tek tik gönderildiğini, mavi çift tik karşı tarafın görüşmeyi açtığını gösterir.
+  Mesajlar dört saniyede bir yenilenir; gizli sekmede sorgulama durur, sekmeye dönünce yenilenir.
+  En son 200 mesaj gösterilir. Enter gönderir, Shift+Enter yeni satır ekler.
+- Mesajlar düz metindir, 1–2000 karakter kabul edilir. Kullanıcı başına dakikada
+  20 gönderim sınırı tüm görüşmeler için ortaktır. Gönderen yalnızca oturumdan alınır.
+- Yalnızca görüşmenin öğretmeni ve bağlı öğrenci/veli erişebilir. Her okuma ve gönderimde
+  güncel hesap durumu ve öğrenci bağlantıları tekrar kontrol edilir; başka öğretmenler ve
+  yöneticiler sırf rolleri nedeniyle başkasının görüşmesini okuyamaz.
+- `Conversation` ve `Message` tabloları kullanılır. Mevcut verileri koruyarak güncellemek için:
+
+  ```bash
+  npx prisma db push
+  npx prisma generate
+  ```
+
+  Mevcut veritabanında `setup`, `db:seed` veya `db:reset` çalıştırmayın.
+  SQLite ve bellek içi mesaj sınırlayıcısı bu kurulumda tek süreç içindir. Çok süreçli
+  dağıtım ortak bir sınırlayıcı gerektirir. Dört saniyelik sorgulama ileride SSE/WebSocket
+  ile değiştirilebilir. Gezinme rozetleri sunucuda sayfa yüklenirken hesaplanır.
+
 ### Yönetici ve öğretmen hesapları
 
 Şema değişiklikleri için `npx prisma db push` çalıştırın. İlk yöneticiyi oluşturun:

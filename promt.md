@@ -1,103 +1,198 @@
-# Task: Frontend redesign — Birikim Kutusu (visual and UX only)
+# TASK: UI cleanup + teacher/student/parent messaging for "Birikim Kutusu"
 
-## Context
+You are working in an existing Next.js 15 (App Router) + Prisma + SQLite + Tailwind + TypeScript project. It is a school management system with three roles: teacher (öğretmen, some are admins), student (öğrenci), parent (veli). The UI language is TURKISH. Keep ALL user-facing strings in Turkish; code, comments, and commit messages in English.
 
-You are working on **Birikim Kutusu**, an existing Turkish school management app. Do NOT scaffold a new project and do NOT change the stack.
+Work in phases. Finish and verify each phase before the next. Do not ask me questions unless something is truly blocking; make reasonable assumptions, and list them in your final report.
 
-- Next.js 15.1 App Router, React 19, TypeScript, Tailwind CSS 3.4, `lucide-react`, `recharts`
-- Prisma/SQLite backend, cookie-session auth, server actions in `src/actions/*`
-- Roles: `TEACHER` / `STUDENT` / `PARENT` (each has its own panel under `/ogretmen`, `/ogrenci`, `/veli`)
-- **All UI text must be in Turkish.**
-- The app has a strict CSP (`next.config.mjs`): `font-src 'self' data:`, `img-src 'self' data: blob:`, `connect-src 'self'`. Do NOT load fonts, icons, scripts or images from any CDN. Use `next/font` (self-hosted) only.
+---------------------------------------------------------------------
+## PHASE 0 — Explore first (no edits yet)
+---------------------------------------------------------------------
+Read these before changing anything and summarize to yourself how they work:
+- README.md, UYGULAMA_NOTLARI.md
+- package.json (scripts), tsconfig.json, eslint config, vitest config, tests/
+- prisma/schema.prisma, prisma/seed.ts
+- src/lib/auth.ts, src/lib/auth-roles.ts (find `requireUser`, `assertCanAccessStudent`, session user shape, role enum/values, admin flag)
+- src/components/ (especially AppShell and any sidebar / top-nav / student search component)
+- src/app/ogretmen/** (dashboard page, student list pages, student detail page + its top tab menu, rehberlik, yonetim, davet-kodlari, ogrenci-yonetimi)
+- src/app/ogrenci/** and src/app/veli/** layouts and navigation
+- src/actions/** (follow the existing server action style, validation approach, and error handling)
+- Any existing rate limiting helper
 
-Read these first: `tailwind.config.ts`, `src/app/globals.css`, `src/app/layout.tsx`, `src/lib/constants.ts`, `src/components/AppShell.tsx`, `src/components/AuthShell.tsx`, `src/components/StudentGrid.tsx`, `src/components/BookCorner.tsx`, `src/components/ExamSessionView.tsx`, `src/components/ExamDonutView.tsx`, `src/components/ExamSessionPuanChart.tsx`, `src/app/ogretmen/page.tsx`, `src/app/ogrenci/page.tsx`, `src/app/veli/page.tsx`, `src/app/login/*`.
+Note the exact route names, component names, and role identifiers you find, and use THOSE (not my guesses below) throughout.
 
-## Scope rules (important)
+---------------------------------------------------------------------
+## PHASE 1 — Teacher UI cleanup
+---------------------------------------------------------------------
 
-- **Visual and UX changes only.** Do not change server actions, auth logic, Prisma schema, route paths, or form field names. The only allowed backend addition is a read-only student search endpoint for the command palette (Phase 7).
-- Do not break the print layout: the exam print page (`.../deneme/[examId]/yazdir`) and `.print-sheet` / `@media print` rules in `globals.css` must render exactly as before. Anything new in shared shells must be `print:hidden` where the current one is.
-- Keep Server Components as the default. Add `"use client"` only where interactivity requires it.
-- Add dependencies sparingly; allowed: `clsx`, `tailwind-merge`, `class-variance-authority`, `sonner`, `cmdk`, Radix primitives (via shadcn/ui, Tailwind v3-compatible setup). No UI kits that need a Tailwind v4 migration.
+### 1.1 Remove the "Ctrl+K" hint
+In the student search box (teacher area), a "Ctrl+K" label/badge is displayed. Remove that visible text/badge only. The search itself and any keyboard shortcut behavior must keep working unless the shortcut exists purely for that label; if the shortcut handler exists, keep it (just hide the hint).
 
-## Problems found in the current UI (fix these)
+### 1.2 Simplify the teacher sidebar
+The teacher sidebar must show ONLY these three items (Turkish labels):
+1. Kontrol Paneli
+2. Öğrenci Yönetimi
+3. Davet Kodları
 
-1. Many labels use `text-[10px]`/`text-[11px]`/`text-[12px]` and `text-slate-400` on white (about 2.6:1 contrast, fails WCAG AA 4.5:1). Parents and students mostly use phones.
-2. `AppShell` has a fixed `w-56` sidebar with no responsive behavior; on mobile it eats the screen.
-3. The brand color is applied through inline `style={{ background: RED }}` in many components; there is only one brand shade in the Tailwind config.
-4. System font stack only; no visual hierarchy between page title, section title and body.
-5. No loading, empty, or error states; destructive actions have no confirmation dialog.
-6. Dashboards show raw numbers without context; student cards show only name and number.
+Remove every other teacher nav item from the sidebar (e.g. Rehberlik). Do NOT delete the underlying pages/routes; only remove the nav links.
+Exception: if the project has an admin-only "Yönetim" link (teacher/account management at /ogretmen/yonetim/ogretmenler), keep it visible ONLY for admin users, otherwise admins lose access to it. Render it as a clearly separate item below the three main ones.
+Mobile navigation (drawer/bottom bar, if any) must reflect the same list.
 
-## Design direction
+### 1.3 Redesign the teacher dashboard (Kontrol Paneli)
+- Remove ALL stat/summary cards and phrases such as "Toplam öğrenci", "Şubeler", counts of classes, etc. Search the whole dashboard for those strings and any similar aggregate widgets.
+- Replace with a grid of class blocks (cards), one per class/şube, fetched from the database (reuse the existing query/helper that lists classes; keep ordering natural, e.g. 5-A, 5-B, 6-A...).
+- Each block shows only the class name (large, centered or left-aligned, consistent with the existing design language). No student counts.
+- Clicking a block navigates to that class's student list (reuse the existing per-class student list page/route; if it only exists as a filter on another page, link to it with the right query param).
+- Grid: 1 column on mobile, 2 on small, 3 on lg, 4 on xl. Blocks must be keyboard-focusable links with visible focus and hover states.
+- Remove the bottom-of-page shortcuts/buttons "Rehberlik notu ekle" and "Davet kodu" (and their wrapping section/headings).
+- Handle empty state: if there are no classes, show a short Turkish message.
 
-Clean, warm, school-friendly; not corporate-gray. Keep the Birikim red (`#c1272d`) as the single accent.
+### Phase 1 acceptance
+- grep confirms the strings "Ctrl+K" (as visible text), "Toplam öğrenci", "Rehberlik notu ekle" no longer render on the teacher dashboard.
+- Sidebar shows exactly the 3 items (+ admin-only Yönetim).
+- `npx tsc --noEmit` and `npm run lint` pass.
 
-- **Brand scale:** extend `tailwind.config.ts` `birikim` with 50–900 (keep `DEFAULT: #c1272d`, `dark`, `light`, `track` for backward compatibility). Derive chart colors in `src/lib/constants.ts` from the same values so recharts and Tailwind never drift.
-- **Neutrals:** page background `#f6f7f9` (slightly warm), cards white with `border-slate-200/70` and a very soft shadow. Radius: `rounded-xl` for cards, `rounded-lg` for controls, `rounded-full` for badges/avatars.
-- **Typography:** load **Plus Jakarta Sans** (or Inter) with the `latin` and `latin-ext` subsets via `next/font/google`, applied on `<body>` through a CSS variable and `fontFamily.sans` in Tailwind. Body 15px, helper text min 13px. **No text below 12px anywhere.** Page title `text-2xl font-bold`, section title `text-base font-semibold`.
-- **Text colors:** body `slate-800`, secondary `slate-600`, muted `slate-500`. Never use `slate-400` for text (icons/borders only).
-- **Interaction:** visible `focus-visible` rings (brand color), min 40px tap targets on mobile, hover/active states on every clickable element, transitions 150ms, respect `prefers-reduced-motion`.
+---------------------------------------------------------------------
+## PHASE 2 — Messaging data model
+---------------------------------------------------------------------
+Add to prisma/schema.prisma (adapt relation fields to existing User/Student models if you want proper relations; keep the unique constraint and indexes):
 
-## Phases (one commit per phase)
+```prisma
+model Conversation {
+  id            String    @id @default(cuid())
+  kind          String    // "OGRENCI" = Ö-Ö-İ (teacher<->student) | "VELI" = Ö-V-İ (teacher<->parent)
+  studentId     String    // the student this conversation is about
+  teacherId     String    // teacher User.id
+  participantId String    // the student's or parent's User.id
+  lastMessageAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  messages      Message[]
 
-### Phase 1 — Foundation
-- Tailwind tokens, `next/font`, `globals.css` base styles (body size, selection color, focus ring, scrollbar), utility `cn()` in `src/lib/utils.ts`.
-- Create `src/components/ui/`: `Button` (primary/secondary/ghost/danger, sizes, loading state), `Card`, `Badge` (neutral/success/warning/danger/brand), `Input`/`Select`/`Textarea` with label + error + hint, `Tabs`, `Skeleton`, `EmptyState` (icon, title, description, optional action), `PageHeader` (title, subtitle, actions), `StatCard` (label, value, delta, icon), `ConfirmDialog` (Radix AlertDialog), `Toaster` (sonner, mounted in root layout).
-- Replace inline `style={{ background: RED }}` and hard-coded hex values in components with token classes. Keep the exported constants only where recharts needs hex.
+  @@unique([kind, studentId, teacherId, participantId])
+  @@index([teacherId, lastMessageAt])
+  @@index([participantId, lastMessageAt])
+}
 
-### Phase 2 — Responsive app shell
-- Rebuild `AppShell` (keep its props: `user`, `sections`, `pageTitle`, `children`; keep logout and "all devices" actions).
-- Desktop (≥1024px): sticky sidebar `w-64`, brand logo, grouped nav with icons, active item with brand-50 background and a left accent bar; user chip with avatar, name, role/title at the bottom.
-- Tablet/mobile teacher panel: top bar with a hamburger that opens a slide-over drawer containing the same nav.
-- Mobile student and parent panels: fixed **bottom tab bar** (max 5 items, icon + 12px label, safe-area padding) instead of a drawer.
-- Header shows page title and, for teachers, a search button (opens the command palette in Phase 7).
-- Everything in the shell stays `print:hidden`.
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  body           String
+  createdAt      DateTime     @default(now())
+  readAt         DateTime?    // set when the OTHER participant opens the conversation
 
-### Phase 3 — Auth pages (`/login`, `/login/[rol]`, `/kayit`, `/kayit/[rol]`)
-- `AuthShell`: split layout on desktop (left: brand panel with logo, school name and a short motto/illustration made with CSS/SVG, no external images; right: form card); single column on mobile.
-- Role selection as large cards with icon, title, description and hover state.
-- Forms: show/hide password toggle, inline field errors, a pending state on the submit button via `useFormStatus`, autofocus on the first field, proper `autocomplete` attributes. If the registration form already has an invite-code field, render it as a monospace, uppercase, letter-spaced input.
-- Do not change form field names or action wiring.
+  @@index([conversationId, createdAt])
+}
+```
 
-### Phase 4 — Teacher dashboard and student lists
-- `/ogretmen`: greeting + date, row of `StatCard`s (students, classes, this week's absences, unread/new notes), a **"Dikkat gerektirenler"** list (students with rising absences, a falling latest exam net, or other signals you can derive from existing queries — read-only, computed from existing data), class overview cards, quick actions.
-- `StudentGrid` cards: avatar, name, class and number, small badges (absence count, latest exam net with ▲/▼ change), selected state with brand ring. Add a search box and class filter chips above lists (client-side filtering).
-- Student detail page tabs (Devamsızlık, Deneme Analizi, Rehberlik, Kitap Köşesi): use the new `Tabs`, sticky on mobile, with counts in badges.
+Run `npx prisma db push` (this project uses db push, not migrations) and `npx prisma generate`. Do NOT run seed/setup/db:reset against any existing data. If you want demo conversations, add them to prisma/seed.ts only; do not execute the seed.
 
-### Phase 5 — Exam analysis and charts
-- Update styling of `ExamSessionView`, `ExamDonutView`, `ExamSessionPuanChart`, `ExamSessionList` to the new tokens.
-- Add a **radar chart** of per-subject net (recharts `RadarChart`), a **net trend line** with latest value emphasized, and delta chips (green ▲ / red ▼) on lists.
-- Tooltips in Turkish with 1-decimal numbers; consistent chart colors from the brand scale; charts must be responsive (`ResponsiveContainer`).
-- The print page output must remain unchanged.
+---------------------------------------------------------------------
+## PHASE 3 — Messaging server actions (src/actions/messages.ts)
+---------------------------------------------------------------------
+Follow the existing server action conventions ("use server", validation, return shape). Implement:
 
-### Phase 6 — Book Corner, notes, absences
-- `BookCorner`: bookshelf grid of cover cards (cover image or generated gradient placeholder with initials), status chip (Okunuyor/Okundu/Planlandı), page-progress style bar when pages are known, star rating, hover actions. Quotes as typographic cards with a large quote mark, source and book chip, favorite heart toggle.
-- Notes (guidance notes): timeline-style list with author avatar/title, "Yeni" badge for unread, visibility chip ("Öğrenciye açık"/"Gizli").
-- Absences: compact table on desktop, card list on mobile, month grouping.
-- All destructive actions use `ConfirmDialog` (replace any `window.confirm`). Success/error feedback via `sonner` toasts.
+1. `ensureConversation(kind, studentId, teacherId, participantId)`
+   - upsert on the compound unique key.
+   - Authorization (critical): the caller must be authenticated; use the existing `assertCanAccessStudent` for the student. Rules:
+     * Teacher caller: kind may be OGRENCI or VELI; participantId must be the student's own account (OGRENCI) or one of that student's linked parent accounts (VELI); teacherId must equal the caller.
+     * Student caller: kind must be OGRENCI; participantId must equal the caller; the student record must be the caller's own; teacherId must be an active teacher.
+     * Parent caller: kind must be VELI; participantId must equal the caller; the student must be linked to this parent (via StudentParent); teacherId must be an active teacher.
+   - Reject anything else with an error.
 
-### Phase 7 — Student and parent panels, command palette
-- `/ogrenci`: friendly summary cards (books read, latest exam, absences, unread notes) with clear empty states.
-- `/veli`: mobile-first; child switcher as a horizontal avatar/segmented control; summary cards per child; shared notes list.
-- Teacher **command palette** (Ctrl/Cmd+K, `cmdk`): search students by name/number across all classes and jump to their page. Add a read-only route handler `GET /api/students/search?q=` guarded by `requireUser(["TEACHER"])`, max 10 results, returning only `id, name, no, class name, photoUrl`. Rate-limit it using the existing limiter. This is the only allowed backend addition.
+2. `sendMessage(conversationId, body)`
+   - Load conversation; caller must be `teacherId` or `participantId`, otherwise throw.
+   - trim body, reject empty, cap at 2000 chars, normalize line endings.
+   - Create message and update `lastMessageAt` in one `$transaction`.
+   - Rate limit: max 20 messages per user per minute (reuse the existing rate-limit helper if present; otherwise a small in-memory limiter consistent with the project's current approach, documented as single-process like the login limiter).
 
-### Phase 8 — States, polish, accessibility
-- `loading.tsx` skeletons for the main route segments (`/ogretmen`, `/ogrenci`, `/veli`, student detail), `error.tsx` and `not-found.tsx` pages in Turkish with a way back.
-- Empty states for every list (no students in class, no books, no notes, no absences).
-- Accessibility pass: labels on all inputs, `aria-label` on icon-only buttons, `aria-current="page"` on active nav, heading order, keyboard operability of drawer/dialog/palette, contrast ≥ 4.5:1 for text.
-- Optional (only if everything else is done): dark mode with `next-themes` and CSS variables.
+3. `fetchAndMarkRead(conversationId)`
+   - Authorization same as above.
+   - `updateMany` set `readAt = now` where `conversationId` matches, `senderId != caller`, `readAt is null`.
+   - Return `{ me: callerId, messages }` ordered ascending by createdAt, last 200 messages.
 
-## Acceptance checklist
+4. `getUnreadCounts()` helper (or per-context variants) returning unread message counts for the caller, grouped as needed for badges (per student and kind for teachers; total for students/parents).
 
-- [ ] No `text-[10px]`/`text-[11px]` left; no `text-slate-400` used for text.
-- [ ] No inline `style={{ background: RED }}` left except where a chart library needs a hex value.
-- [ ] All pages usable at 375px, 768px and 1280px widths without horizontal scroll; student/parent panels use a bottom tab bar on mobile, teacher panel uses a drawer.
-- [ ] Fonts are self-hosted (`next/font`); no CSP violations in the browser console on any page.
-- [ ] Exam print page looks identical to before (compare before/after PDF or screenshot).
-- [ ] Every destructive action asks for confirmation; every list has an empty state; main routes have loading skeletons.
-- [ ] All three role demo accounts can still log in and use every existing feature (`npm run setup` demo data).
-- [ ] `npx tsc --noEmit`, `npm run lint` and `npm run build` pass.
+5. `listConversationsForUser()` for student/parent pages: conversations with the other party's name, last message preview, unread count.
 
-## Process
+All actions must only trust the session user, never user-supplied sender IDs.
 
-Work phase by phase, one commit per phase. If Playwright is available, take screenshots of each main page at 375/768/1280px before and after, and an axe accessibility check; otherwise list the pages you could not verify visually. At the end, report: files changed/added, new dependencies, and anything you intentionally skipped.
+---------------------------------------------------------------------
+## PHASE 4 — Chat UI
+---------------------------------------------------------------------
+Create ONE shared client component `src/components/Chat.tsx` used by teacher, student, and parent pages.
+
+Props: `conversationId: string`, `title: string`.
+
+Behavior (WhatsApp-like):
+- Bubble layout: my messages right-aligned with green background, the other party's left-aligned with white background and border. Rounded bubbles, max width ~75%, `whitespace-pre-wrap break-words`.
+- Each bubble shows time (HH:mm, tr-TR). Group/date separators ("Bugün", "Dün", or date) between days.
+- Read receipts on MY messages only: single check "✓" (gray) = sent/delivered, double check "✓✓" (blue) = read (`readAt` not null). Add an accessible label (aria-label "Gönderildi"/"Okundu").
+- Input: textarea; Enter sends, Shift+Enter inserts newline; Send button disabled while pending or empty; clear input immediately on send (optimistic append with a temporary id, reconcile after reload).
+- Live updates: poll `fetchAndMarkRead` every 4 seconds; skip polling while `document.hidden`; also refresh immediately when the tab becomes visible again. Clean up the interval on unmount.
+- Auto-scroll to bottom on first load and when new messages arrive, but do NOT yank the scroll if the user has scrolled up to read history (only auto-scroll when already near the bottom, or when the user's own message is sent).
+- Render message text as plain text only. Never use dangerouslySetInnerHTML.
+- Loading and empty states in Turkish ("Henüz mesaj yok. İlk mesajı siz gönderin.").
+- Fixed-height container (e.g. h-[70vh]) with scrollable message area; works on mobile.
+- Match the project's existing Tailwind style and colors.
+
+---------------------------------------------------------------------
+## PHASE 5 — Pages and navigation
+---------------------------------------------------------------------
+
+### 5.1 Teacher side — student detail page top menu
+When a teacher clicks a student, the student detail page has a top tab menu. Add two tabs to it:
+- **Ö-Ö-İ** → teacher ↔ student chat. Route e.g. /ogretmen/ogrenci/[id]/ogrenci-mesaj (use the project's real student-detail route pattern).
+- **Ö-V-İ** → teacher ↔ parent chat. Route e.g. /ogretmen/ogrenci/[id]/veli-mesaj.
+
+Details:
+- Ö-Ö-İ: resolve the student's linked user account; if the student has no account yet (no invite used), show a clear Turkish message ("Bu öğrenci henüz hesap oluşturmadı.") instead of a chat.
+- Ö-V-İ: a student can have multiple parents (Anne, Baba, Diğer). Show a parent selector at the top (labels like "Anne", "Baba", "Diğer veli" using the existing relationship field), each with its own conversation and its own unread badge. If no parent account is linked, show a Turkish empty message.
+- Both tabs show an unread-count badge when > 0. Opening the chat marks messages read (handled by `fetchAndMarkRead`).
+- Highlight the active tab consistently with the existing tab styling.
+
+### 5.2 Student panel
+Add "Mesajlar" to the student navigation and a page at /ogrenci/mesajlar: list of teachers the student can write to (at minimum all active teachers; if the data model has a class–teacher relation, prefer that), existing conversations with last-message preview and unread badge, and the Chat view for the selected one. Starting a new conversation uses `ensureConversation`.
+
+### 5.3 Parent panel
+Add "Mesajlar" to the parent navigation and a page at /veli/mesajlar: if the parent has multiple children, a child selector; teacher selection as above; conversations list with unread badges; Chat view. Kind is always VELI.
+
+### 5.4 Unread badge in navigation
+Show a total unread badge next to "Mesajlar" in student and parent navs. Compute it server-side in the layout (no client polling needed beyond the page itself).
+
+### 5.5 Auth on every page
+Each page must call `requireUser([...allowed roles])` like existing pages do. A teacher must not be able to open another role's route and vice versa.
+
+---------------------------------------------------------------------
+## PHASE 6 — Tests and docs
+---------------------------------------------------------------------
+Add vitest tests (follow the existing test setup in tests/) covering at least:
+- A user who is not a participant cannot send to or read a conversation.
+- A parent cannot create a conversation for a student they are not linked to.
+- A student cannot create a VELI conversation.
+- `fetchAndMarkRead` marks only the other party's messages as read, and the sender's own messages stay unread by themselves.
+- Empty and over-length bodies are rejected; rate limit triggers after 20 messages/min.
+
+Update README.md and UYGULAMA_NOTLARI.md: new sidebar, new dashboard behavior, messaging feature (roles, routes, read receipts, 4s polling, rate limit, security rules), and note that polling can later be replaced by SSE/WebSocket and that SQLite/in-memory limiter are single-process.
+
+---------------------------------------------------------------------
+## FINAL VERIFICATION (must all pass)
+---------------------------------------------------------------------
+Run and fix until clean:
+- `npx prisma generate`
+- `npx tsc --noEmit`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+
+Then manually sanity-check via `npm run dev` (do not reseed existing data): teacher dashboard shows class blocks, sidebar has 3 items, Ö-Ö-İ / Ö-V-İ tabs appear on a student page, a message sent as teacher appears for the student with single tick and turns to double blue tick after the student opens it.
+
+## RULES
+- Do not break existing features. Pages removed from the sidebar must still exist and work.
+- Do not delete or reset the database. Never run `db:reset`, `setup`, or `db:seed` against existing data.
+- Do not commit secrets or modify .env.
+- Keep changes minimal outside the described scope; match existing code style.
+- No new heavy dependencies; use what is already installed.
+
+## FINAL REPORT FORMAT
+End with: (1) list of files created/modified, (2) any assumptions you made (route names, role names, schema relations), (3) anything you could not complete and why, (4) the exact commands I should run to apply the schema change on my machine.

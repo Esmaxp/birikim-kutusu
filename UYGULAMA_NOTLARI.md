@@ -1,5 +1,77 @@
 # promt.md uygulama notları
 
+## Mesaj gönderimi düzeltmesi ve üst bildirim alanı
+
+- `crypto.randomUUID` bulunmadığında gönderimin hata yakalama bloğuna ulaşmadan
+  kilitlendiği tarayıcıda yeniden üretildi. Yerel geçici mesaj kimliği bu API'ye
+  bağımlı olmaktan çıkarıldı; aynı tarayıcı senaryosunda gönderim/alım doğrulandı.
+- Beklenen oturum, erişim ve hız sınırı hataları üretimde de Türkçe gösterilir.
+  Gönderim hatası düzenli sorgulama tarafından silinmez; bağlantı için yeniden deneme vardır.
+- Üst çubukta tüm rollere Bildirimler zili eklendi. Okunmamış mesaj sayısı, gönderen,
+  öğrenci, önizleme ve doğru görüşmeye bağlantı gösterilir. Yeni mesaj uygulama içi
+  bildirim oluşturur. Gizli sekmede sorgulama durur; görünür olunca yenilenir.
+- `/api/messages/notifications` yalnızca oturum sahibinin güncel olarak erişebildiği
+  görüşmelerdeki gelen, okunmamış mesajları döndürür. Yanıtlar önbelleğe alınmaz.
+  Bildirim listesini açmak mesajları okundu saymaz; sohbet açılmalıdır.
+- Yeni dosyalar: `src/lib/message-notifications.ts`,
+  `src/app/api/messages/notifications/route.ts`, `src/components/MessageNotifications.tsx`,
+  `tests/message-notifications.test.ts`. Mesaj action'ları, Chat, AppShell, mesaj
+  testleri ve belgeler güncellendi. Şema veya ortam değişkeni değişikliği gerekmez.
+- Doğrulama: 13 dosyada 45 test geçti. `crypto.randomUUID` kapatılarak yapılan
+  tarayıcı testinde gönderim, alım ve okundu bilgisi çalıştı. Öğrenci, öğretmen ve
+  veli başka sayfadayken gelen mesajın zil sayacını güncellediği ve bildirimin doğru
+  görüşmeye açıldığı doğrulandı. Mobil bildirim kutusunda ve üç rolün mobil/masaüstü
+  sohbetlerinde axe WCAG A/AA ihlali ve tarayıcı çalışma hatası bulunmadı.
+
+## Mesajlaşma ve panel sadeleştirme — 19 Ekim 2026
+
+- Öğretmen menüsü üç ana bağlantı ve yalnızca yöneticiye görünen ayrı Yönetim
+  bağlantısı içerir. Kontrol paneli yalnızca doğal sıralı, tıklanabilir şube kartlarıdır.
+  Eski rehberlik/not sayfaları korunmuştur; arama kısayolunun yalnızca ipucu kaldırılmıştır.
+- Mevcut öğrenci detayının `?tab=` yapısı korunmuştur: `ogrenci-mesaj` (Ö-Ö-İ)
+  ve `veli-mesaj` (Ö-V-İ). Veli seçimi `veli` parametresiyle yapılır.
+  Öğrenci ve veli gelen kutuları `/ogrenci/mesajlar`, `/veli/mesajlar` adreslerindedir.
+- Roller `TEACHER`, `STUDENT`, `PARENT`; veli bağlantısı `StudentParent`, yakınlık alanı
+  `yakinlik` (ANNE/BABA/VELI), öğrenci hesabı `Student.userId` olarak kullanılmıştır.
+  Şube–öğretmen ilişkisi olmadığından tüm etkin öğretmenlere yazılabilir.
+- Conversation ve Message tabloları yabancı anahtarlarla eklendi. Görüşme anahtarı
+  tür, öğrenci, öğretmen ve katılımcı birleşiminde benzersizdir. Mesaj oluşturma ve
+  son mesaj zamanı tek veritabanı işleminde güncellenir.
+- Katılımcı üyeliği, güncel öğrenci/veli bağı ve hesap etkinliği her erişimde denetlenir.
+  Gönderen oturumdan belirlenir; öğretmen başka öğretmen adına görüşme açamaz.
+  Okundu işlemi yalnızca karşı tarafın okunmamış mesajlarına uygulanır.
+- Ortak Chat bileşeni düz metin, tarih ayırıcıları, tek tik/mavi çift tik, geçici mesaj
+  gösterimi, gönderim hatası ve kaydırma konumunu koruma içerir. En son 200 mesaj
+  gösterilir; dört saniyede bir yenilenir, gizli sekmede durur, görünür olunca yenilenir.
+- Mesaj en fazla 2000 karakterdir; dakikada kullanıcı başına 20 gönderim kabul edilir.
+  SQLite ve bellek içi sınırlayıcı tek süreç içindir; çok süreçte ortak sayaç gerekir.
+  İleride sorgulama SSE/WebSocket ile değiştirilebilir. Menü rozetleri sunucuda hesaplanır.
+- Şema yerelde `npx prisma db push --skip-generate` ve `npx prisma generate` ile uygulandı.
+  Mevcut veri yeniden seed edilmedi; `.env` değiştirilmedi. Başka bilgisayarda:
+  `npx prisma db push` ve `npx prisma generate` çalıştırın.
+
+### Bu değişikliğin doğrulaması ve dosyaları
+
+- `npx prisma generate`, `npx tsc --noEmit`, `npm run lint`, `npm test` ve
+  `npm run build` başarılı. 12 test dosyasında 39 test geçti; dokuzu mesajlaşmaya aittir.
+- Geliştirme sunucusunda tarayıcı üzerinden şube kartları, yönetici menüsü, Ctrl+K,
+  öğretmen–öğrenci mesajı, öğrenci yanıtı, veli seçimi ve tek tikten mavi çift tike
+  geçiş doğrulandı. Mesaj içindeki HTML düz metin olarak gösterildi.
+- Üç rolün 375 ve 1280 piksel mesaj ekranlarında sayfa taşması, tarayıcı çalışma
+  hatası veya axe WCAG A/AA ihlali bulunmadı. Yanlış rolün sayfaya erişimi engellendi.
+  Kontrol için açılan geçici oturumlar ve test mesajları işlem sonunda temizlendi.
+- Eklenen dosyalar: `src/actions/messages.ts`, `src/lib/messages.ts`,
+  `src/components/Chat.tsx`, `src/components/TeacherChat.tsx`,
+  `src/components/MessageInbox.tsx`, `src/app/ogrenci/mesajlar/page.tsx`,
+  `src/app/veli/mesajlar/page.tsx`, `tests/messages.test.ts`.
+- Güncellenen dosyalar: `prisma/schema.prisma`, `src/components/AppShell.tsx`,
+  `src/app/ogretmen/layout.tsx`, `src/app/ogretmen/page.tsx`,
+  `src/app/ogretmen/ogrenci/[studentId]/page.tsx`, `src/app/ogrenci/layout.tsx`,
+  `src/app/veli/layout.tsx`, `README.md`, `UYGULAMA_NOTLARI.md`.
+- Kullanıcının `promt.md` değişikliği korundu; dosyaya müdahale edilmedi.
+
+Önceki sürüme ait uygulama notları aşağıdadır.
+
 Beş ana görevin zorunlu kod değişiklikleri sırayla uygulandı. Mevcut `promt.md`
 değişikliği korundu. İsteğe bağlı Upload tablosu eklenmedi; isteğe bağlı demo
 şifresi denetimi eklendi.

@@ -1,23 +1,25 @@
-import Link from "next/link";
-import { Users, School, CalendarX, StickyNote, ArrowUpRight, AlertCircle } from "lucide-react";
+﻿import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
-import { formatDate } from "@/lib/constants";
-import { PageHeader, StatCard, Card, Badge, EmptyState, buttonVariants } from "@/components/ui";
+import { PageHeader, EmptyState } from "@/components/ui";
+
 export default async function OgretmenDashboard() {
-  const user = await requireUser(["TEACHER"]);
-  const now = new Date(); const week = new Date(now); week.setDate(now.getDate() - ((now.getDay() + 6) % 7)); week.setHours(0,0,0,0);
-  const recent = new Date(now.getTime() - 14 * 86400000); const split = new Date(now.getTime() - 7 * 86400000);
-  const [classes, count, absenceCount, noteCount, students] = await Promise.all([
-    prisma.schoolClass.findMany({ orderBy: { order: "asc" }, include: { _count: { select: { students: true } } } }),
-    prisma.student.count(), prisma.absence.count({ where: { date: { gte: week, lte: now } } }), prisma.note.count({ where: { createdAt: { gte: week } } }),
-    prisma.student.findMany({ include: { class: true, absences: { where: { date: { gte: recent, lte: now } }, select: { date: true } }, examSessions: { take: 2, orderBy: { sinavTarihi: "desc" }, select: { toplamNet: true } } } })
-  ]);
-  const attention = students.map((s) => { const current = s.absences.filter((a) => a.date >= split).length; const previous = s.absences.length - current; const [latest, older] = s.examSessions; const falling = latest?.toplamNet != null && older?.toplamNet != null && latest.toplamNet < older.toplamNet; return { ...s, reasons: [current > previous && current > 0 ? `Son 7 günde ${current} devamsızlık` : "", falling ? `Son sınav neti ${latest.toplamNet?.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}` : ""].filter(Boolean) }; }).filter((s) => s.reasons.length);
-  return <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8"><PageHeader title={`Merhaba, ${user.name.split(" ")[0]}`} subtitle={`${formatDate(now)} · Bugün bir öğrencinin hikâyesine dokunun.`} actions={<Link href="/ogretmen/yonetim/ogrenciler" className={buttonVariants({ variant: "secondary" })}><Users size={17} />Öğrenci yönetimi</Link>} />
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5"><StatCard label="Öğrenciler" value={count} delta="Birlikte gelişen öğrenciler" icon={Users} /><StatCard label="Şubeler" value={classes.length} delta="Aktif sınıf grupları" icon={School} /><StatCard label="Devamsızlık" value={absenceCount} delta="Bu hafta kaydedilen" icon={CalendarX} /><StatCard label="Yeni notlar" value={noteCount} delta="Bu hafta paylaşılan ve özel notlar" icon={StickyNote} /></div>
-    <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]"><Card><div className="mb-5 flex items-center justify-between"><h2 className="text-base font-semibold">Şubelerine göz at</h2><Badge>{classes.length} şube</Badge></div>{classes.length ? <div className="grid gap-3 sm:grid-cols-2">{classes.map((c) => <Link href={`/ogretmen/sube/${encodeURIComponent(c.name)}`} key={c.id} className="group flex items-center gap-4 rounded-xl border border-slate-200 p-4 hover:border-birikim-300 hover:bg-birikim-50"><span className="flex h-12 w-12 items-center justify-center rounded-xl bg-birikim-50 text-lg font-bold text-birikim-800">{c.name}</span><span className="flex-1"><span className="block font-semibold">{c.name} Şubesi</span><span className="text-sm text-slate-600">{c._count.students} öğrenci</span></span><ArrowUpRight size={19} className="text-slate-600 group-hover:text-birikim" /></Link>)}</div> : <EmptyState title="Henüz şube yok" description="Şubeler eklendiğinde burada görünecek." />}</Card>
-    <Card><h2 className="flex items-center gap-2 text-base font-semibold"><AlertCircle size={18} className="text-birikim" />Dikkat gerektirenler</h2><p className="mt-1 text-[13px] text-slate-600">Son iki sınav ve son iki haftanın devamsızlık kayıtlarına göre.</p>{attention.length ? <ul className="mt-4 divide-y divide-slate-100">{attention.slice(0,6).map((s) => <li key={s.id}><Link href={`/ogretmen/ogrenci/${s.id}`} className="flex min-h-16 items-center justify-between gap-3 rounded-lg py-3 hover:bg-slate-50"><div><p className="text-sm font-semibold">{s.name} <span className="font-normal text-slate-600">· {s.class.name}</span></p><p className="text-[13px] text-slate-600">{s.reasons.join(" · ")}</p></div><ArrowUpRight size={18} className="shrink-0 text-birikim" /></Link></li>)}</ul> : <EmptyState title="Takip gerektiren yeni sinyal yok" description="Veriler geldikçe bu alan güncellenir." />}</Card></div>
-    <Card className="mt-6 flex flex-wrap items-center justify-between gap-4 bg-birikim-50/50"><div><h2 className="font-semibold">Bir sonraki adımı birlikte atalım</h2><p className="mt-1 text-sm text-slate-600">Bir görüşme notu ekleyin veya aileyi gelişim yolculuğuna davet edin.</p></div><div className="flex flex-wrap gap-2"><Link className={buttonVariants()} href="/ogretmen/rehberlik">Rehberlik notu ekle</Link><Link className={buttonVariants({ variant: "secondary" })} href="/ogretmen/yonetim/davet-kodlari">Davet kodları</Link></div></Card>
-  </div>;
+  await requireUser(["TEACHER"]);
+  const classes = await prisma.schoolClass.findMany({ select: { id: true, name: true } });
+  classes.sort((a, b) => a.name.localeCompare(b.name, "tr", { numeric: true }));
+  return (
+    <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+      <PageHeader title="Kontrol Paneli" />
+      {classes.length ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {classes.map((schoolClass) => (
+            <Link key={schoolClass.id} href={`/ogretmen/sube/${encodeURIComponent(schoolClass.name)}`}
+              className="flex min-h-36 items-center justify-center rounded-xl border border-slate-200 bg-white p-6 text-3xl font-semibold text-slate-800 shadow-sm transition-colors hover:border-birikim hover:bg-birikim-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-birikim focus-visible:ring-offset-2">
+              {schoolClass.name}
+            </Link>
+          ))}
+        </div>
+      ) : <EmptyState title="Henüz şube yok" description="Şubeler eklendiğinde burada görünecek." />}
+    </div>
+  );
 }

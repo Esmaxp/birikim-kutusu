@@ -31,6 +31,9 @@ model User {
   authoredNotes  Note[]
   addedBooks     Book[]
   auditLogs      AuditLog[]
+  teachingConversations Conversation[] @relation("ConversationTeacher")
+  participatingConversations Conversation[] @relation("ConversationParticipant")
+  sentMessages Message[]
 
   examSessionsAuthored    ExamSession[] @relation("ExamAuthor")
   examSessionsAsCounselor ExamSession[] @relation("ExamCounselor")
@@ -79,6 +82,7 @@ model Student {
   exam         ExamAnalysis?
   examSessions ExamSession[]
   invites InviteCode[]
+  conversations Conversation[]
 
   @@index([classId])
   @@unique([classId, no])
@@ -115,6 +119,38 @@ model StudentParent {
 
   @@unique([studentId, parentId])
   @@index([parentId])
+}
+
+model Conversation {
+  id            String   @id @default(cuid())
+  kind          String   // OGRENCI | VELI
+  studentId     String
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId     String
+  teacher       User     @relation("ConversationTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   User     @relation("ConversationParticipant", fields: [participantId], references: [id], onDelete: Cascade)
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  messages      Message[]
+
+  @@unique([kind, studentId, teacherId, participantId])
+  @@index([teacherId, lastMessageAt])
+  @@index([participantId, lastMessageAt])
+  @@index([studentId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  createdAt      DateTime     @default(now())
+  readAt         DateTime?
+
+  @@index([conversationId, createdAt])
 }
 
 /// Kitap Köşesi kaydı. Öğrenci kendi kitabını ekleyebilir, öğretmen de ekleyebilir.
